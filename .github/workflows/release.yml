@@ -56,19 +56,113 @@ jobs:
           tag_name: ${{ github.event.release.tag_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  trigger-homebrew-update:
+  update-homebrew-formula:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
-      - name: Trigger homebrew-netmon update
-        uses: peter-evans/repository-dispatch@v3
+      - name: Checkout homebrew-netmon
+        uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.HOMEBREW_NETMON_TOKEN || secrets.GITHUB_TOKEN }}
           repository: zzzzseong/homebrew-netmon
-          event-type: release-created
-          client-payload: |
-            {
-              "tag": "${{ github.event.release.tag_name }}",
-              "repository": "${{ github.repository }}"
-            }
+          path: homebrew-netmon
+
+      - name: Download binaries and calculate SHA256
+        working-directory: homebrew-netmon
+        run: |
+          VERSION="${{ github.event.release.tag_name }}"
+          
+          # Download and calculate SHA256 for each platform
+          for platform in darwin-amd64 darwin-arm64 linux-amd64 linux-arm64; do
+            curl -L "https://github.com/${{ github.repository }}/releases/download/${VERSION}/netmon-${platform}.tar.gz" -o "netmon-${platform}.tar.gz"
+            SHA256=$(shasum -a 256 "netmon-${platform}.tar.gz" | cut -d' ' -f1)
+            echo "${platform}=${SHA256}" >> sha256s.txt
+            echo "SHA256 for ${platform}: ${SHA256}"
+          done
+
+      - name: Update Formula with SHA256
+        working-directory: homebrew-netmon
+        run: |
+          VERSION_NUM=$(echo "${{ github.event.release.tag_name }}" | sed 's/v//')
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          
+          echo "Version: $VERSION_NUM"
+          echo "Release Tag: $RELEASE_TAG"
+          echo "SHA256 values:"
+          cat sha256s.txt
+          
+          # Update Formula file using Python
+          python3 << EOF
+          import re
+          
+          VERSION_NUM = "$VERSION_NUM"
+          RELEASE_TAG = "$RELEASE_TAG"
+
+          # Read SHA256 values
+          sha256s = {}
+          with open('sha256s.txt', 'r') as f:
+              for line in f:
+                  if '=' in line:
+                      platform, sha256 = line.strip().split('=', 1)
+                      sha256s[platform] = sha256
+                      print(f"Loaded SHA256 for {platform}: {sha256}")
+          
+          # Read Formula file
+          with open('Formula/netmon.rb', 'r') as f:
+              content = f.read()
+          
+          # Update version
+          content = re.sub(r'version "\d+\.\d+\.\d+"', f'version "{VERSION_NUM}"', content)
+          
+          # Update URLs with version
+          content = re.sub(r'releases/download/v\d+\.\d+\.\d+', f'releases/download/{RELEASE_TAG}', content)
+          
+          # Update SHA256 values
+          platform_urls = {
+              'darwin-amd64': 'netmon-darwin-amd64.tar.gz',
+              'darwin-arm64': 'netmon-darwin-arm64.tar.gz',
+              'linux-amd64': 'netmon-linux-amd64.tar.gz',
+              'linux-arm64': 'netmon-linux-arm64.tar.gz'
+          }
+          
+          for platform, sha256 in sha256s.items():
+              if platform not in platform_urls:
+                  print(f"Warning: Unknown platform {platform}")
+                  continue
+              
+              url_pattern = platform_urls[platform]
+              pattern = rf'(url\s+"[^"]*{re.escape(url_pattern)}"\s+)sha256\s+"[^"]*"'
+              replacement = rf'\1sha256 "{sha256}"'
+              
+              new_content = re.sub(pattern, replacement, content)
+              if new_content != content:
+                  print(f"Updated SHA256 for {platform}")
+                  content = new_content
+              else:
+                  print(f"Warning: Could not find URL pattern for {platform}")
+          
+          # Write back
+          with open('Formula/netmon.rb', 'w') as f:
+              f.write(content)
+          
+          print("Formula file updated successfully")
+          EOF
+          
+          echo "Updated Formula file:"
+          cat Formula/netmon.rb | grep -A 1 "sha256"
+
+      - name: Commit and push Formula update
+        working-directory: homebrew-netmon
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/netmon.rb
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: update Formula SHA256 for ${{ github.event.release.tag_name }}"
+            git push origin main
+          else
+            echo "No changes to commit"
+          fi
