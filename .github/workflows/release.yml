@@ -116,17 +116,32 @@ jobs:
           # Update URLs with version
           content = re.sub(r'releases/download/v\d+\.\d+\.\d+', f'releases/download/{RELEASE_TAG}', content)
           
-          # Update SHA256 values using regex for more flexible matching
+          # Update SHA256 values - find URL and replace the following sha256 line
+          # Map platforms to their URL patterns
+          platform_urls = {
+              'darwin-amd64': f'netmon-darwin-amd64.tar.gz',
+              'darwin-arm64': f'netmon-darwin-arm64.tar.gz',
+              'linux-amd64': f'netmon-linux-amd64.tar.gz',
+              'linux-arm64': f'netmon-linux-arm64.tar.gz'
+          }
+          
           for platform, sha256 in sha256s.items():
-              # Match: sha256 "" # Update with actual SHA256 for {platform}
-              pattern = rf'sha256\s+""\s+#\s*Update with actual SHA256 for {re.escape(platform)}'
-              replacement = f'sha256 "{sha256}"'
+              if platform not in platform_urls:
+                  print(f"Warning: Unknown platform {platform}")
+                  continue
+              
+              url_pattern = platform_urls[platform]
+              # Match the URL line and the following sha256 line
+              # Pattern: url "..." followed by sha256 "..."
+              pattern = rf'(url\s+"[^"]*{re.escape(url_pattern)}"\s+)sha256\s+"[^"]*"'
+              replacement = rf'\1sha256 "{sha256}"'
+              
               new_content = re.sub(pattern, replacement, content)
               if new_content != content:
                   print(f"Updated SHA256 for {platform}")
                   content = new_content
               else:
-                  print(f"Warning: Could not find pattern for {platform}")
+                  print(f"Warning: Could not find URL pattern for {platform}")
           
           # Write back
           with open('Formula/netmon.rb', 'w') as f:
