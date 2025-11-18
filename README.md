@@ -1,87 +1,187 @@
 # netmon
 
-`netmon` is a Go-based CLI tool for macOS/Linux that allows you to check active TCP/UDP ports with a modern interface and manage processes.
+📡 **netmon** - A powerful CLI tool for monitoring network connections and managing processes.
 
-## Features
+A modern, beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports and managing processes on macOS and Linux.
 
-- **Port List**: Display active TCP/UDP ports in a table format with PID and process name
-- **Process Termination**: Interactive cursor-based prompt to confirm and execute process termination
-- **Color Support**: Color-coded port status (LISTEN: green, ESTABLISHED: blue)
-- **Cross-platform**: Supports both macOS and Linux
+## ✨ Features
 
-## Installation
+- **📋 Port Listing**: Display all active TCP/UDP ports in a beautifully formatted table
+- **🔍 Port Search**: Find processes using a specific port (similar to `lsof -i :port`)
+- **🛑 Process Management**: Safely shutdown processes with interactive confirmation
+- **🎨 Beautiful UI**: Modern terminal interface with ASCII art and color-coded output
+- **⚡ Fast & Lightweight**: Built with Go for optimal performance
+- **🔄 Cross-platform**: Works on macOS and Linux
 
-### Requirements
+## 📦 Installation
 
-- Go 1.16 or higher
+### Prerequisites
 
-### Build
+- Go 1.25 or higher
+
+### Build from Source
 
 ```bash
-go build -o netmon main.go
+# Clone the repository
+git clone https://github.com/zzzzseong/netmon.git
+cd netmon
+
+# Build
+go build -o netmon .
+
+# Install (optional)
+sudo mv netmon /usr/local/bin/
 ```
 
-Or run directly:
+### Run Directly
 
 ```bash
 go run main.go ls
 ```
 
-## Usage
+### Homebrew (Coming Soon)
 
-### List Ports
+```bash
+# Installation via Homebrew will be available soon
+# brew install netmon
+```
+
+## 🚀 Usage
+
+### Get Help
+
+```bash
+netmon help
+# or
+netmon --help
+# or
+netmon -h
+```
+
+### List Active Ports
+
+Display all active listening ports with process information:
 
 ```bash
 netmon ls
 ```
 
-Displays active TCP/UDP ports in the following format:
-
+**Output:**
 ```
-PROTOCOL    LOCAL ADDRESS    STATUS      PID    PROCESS NAME
---------    ------------    ------      ---    ------------
-TCP         0.0.0.0:8080    LISTEN      1234   nginx
-UDP         127.0.0.1:53     LISTEN      567    systemd-resolved
+╭───────────────────────┬──────────────────────┬──────────────────────┬──────────────────────┬─────────────────────────╮
+│  PROTOCOL             │  LOCAL ADDRESS       │  STATUS              │  PID                 │  PROCESS NAME           │
+├───────────────────────┼──────────────────────┼──────────────────────┼──────────────────────┼─────────────────────────┤
+│ TCP                   │ *:8080               │ LISTEN               │ 12345                │ nginx                   │
+│ UDP                   │ 127.0.0.1:53         │ LISTEN               │ 567                  │ systemd-resolved        │
+╰───────────────────────┴──────────────────────┴──────────────────────┴──────────────────────┴─────────────────────────╯
 ```
 
-### Kill Process
+### Find Process by Port
+
+Find which process is using a specific port:
 
 ```bash
-netmon kill <pid>
+netmon find <port>
 ```
-
-Displays process information and prompts for confirmation before termination:
-
-1. Display process information (PID, name, status, listening ports)
-2. Select "Kill" or "Cancel" using arrow keys
-3. Press Enter to confirm
-4. Process is terminated if "Kill" is selected
 
 **Example:**
+```bash
+netmon find 8080
+```
+
+This is equivalent to `lsof -i :8080` but with a more beautiful output format.
+
+### Shutdown Process
+
+Safely shutdown a process with interactive confirmation:
 
 ```bash
-netmon kill 1234
+netmon shutdown <pid>
 ```
 
-```
-=== Process Information ===
-PID:        1234
-Name:       nginx
-Status:     [S]
-
-Listening Ports:
-  - 0.0.0.0:8080 (TCP)
-
-Do you want to kill this process?
-Select: [Kill/Cancel]
+**Example:**
+```bash
+netmon shutdown 12345
 ```
 
-## Dependencies
+The command will:
+1. Display detailed process information (PID, name, status, active ports)
+2. Show an interactive prompt for confirmation
+3. Safely shutdown the process if confirmed
 
-- `github.com/shirou/gopsutil/v3` - Network and process information retrieval
+**Interactive Prompt:**
+```
+⚙️  Process Information
+╭─────────────────────────────────────╮
+│ PID:        12345                   │
+│ Name:       nginx                   │
+│ Status:     [S]                     │
+│                                     │
+│ Active Ports:                       │
+│   • 0.0.0.0:8080 (TCP)             │
+╰─────────────────────────────────────╯
+
+⚠️  Do you want to shutdown this process?
+[Shutdown/Cancel]
+```
+
+## 📚 Commands
+
+| Command | Description | Usage |
+|---------|-------------|-------|
+| `ls` | List all active ports | `netmon ls` |
+| `find` | Find process using a port | `netmon find <port>` |
+| `shutdown` | Shutdown a process | `netmon shutdown <pid>` |
+| `help` | Show help information | `netmon help` |
+
+## 🎯 Use Cases
+
+- **Port Conflict Resolution**: Quickly find which process is using a port
+- **Network Monitoring**: Monitor active network connections
+- **Process Management**: Safely terminate processes with confirmation
+- **Development**: Check if your development server port is available
+
+## 🛠️ Dependencies
+
+- `github.com/shirou/gopsutil/v3` - System and process utilities
+- `github.com/charmbracelet/lipgloss` - Terminal styling
 - `github.com/manifoldco/promptui` - Interactive prompts
-- `github.com/fatih/color` - Terminal color output
 
-## License
+## 📝 Examples
 
-MIT
+### Check if port 3000 is in use
+
+```bash
+netmon find 3000
+```
+
+### List all active ports
+
+```bash
+netmon ls
+```
+
+### Shutdown a process by PID
+
+```bash
+netmon shutdown 12345
+```
+
+### Get help
+
+```bash
+netmon help
+```
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🔗 Links
+
+- **GitHub**: https://github.com/zzzzseong/netmon
+- **Issues**: https://github.com/zzzzseong/netmon/issues
