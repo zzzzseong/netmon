@@ -3,7 +3,6 @@ class Netmon < Formula
   homepage "https://github.com/zzzzseong/netmon"
   version "1.0.0"
   license "MIT"
-  head "https://github.com/zzzzseong/netmon.git", branch: "main"
 
   on_macos do
     if Hardware::CPU.intel?
