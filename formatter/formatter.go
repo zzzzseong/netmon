@@ -122,24 +122,24 @@ func NewProcessInfoFormatter() *ProcessInfoFormatter {
 
 // Format은 프로세스 정보를 포맷팅합니다
 func (f *ProcessInfoFormatter) Format(pid int, processName string, status []string, connections []net.ConnectionStat) string {
-	title := style.TitleStyle.Render("⚙️  프로세스 정보")
+	title := style.TitleStyle.Render("⚙️  Process Information")
 
 	infoContent := fmt.Sprintf("%s%s\n",
 		style.LabelStyle.Render("PID:"),
 		style.ValueStyle.Render(fmt.Sprintf("%d", pid)))
 
 	infoContent += fmt.Sprintf("%s%s\n",
-		style.LabelStyle.Render("이름:"),
+		style.LabelStyle.Render("Name:"),
 		style.ValueStyle.Render(processName))
 
 	statusStr := fmt.Sprintf("%v", status)
 	infoContent += fmt.Sprintf("%s%s\n",
-		style.LabelStyle.Render("상태:"),
+		style.LabelStyle.Render("Status:"),
 		style.ValueStyle.Render(statusStr))
 
 	// 포트 정보 추가
 	if len(connections) > 0 {
-		infoContent += "\n" + lipgloss.NewStyle().Foreground(style.SubtleColor).Render("사용 중인 포트:") + "\n"
+		infoContent += "\n" + lipgloss.NewStyle().Foreground(style.SubtleColor).Render("Active Ports:") + "\n"
 		for _, conn := range connections {
 			// LISTEN 상태이거나 UDP인 경우 표시
 			if conn.Status == "LISTEN" || (conn.Status == "" && utils.IsUDP(conn.Type)) {

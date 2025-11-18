@@ -51,7 +51,7 @@ func (r *Registry) List() []Command {
 func (r *Registry) Execute(name string, args []string) error {
 	cmd, ok := r.Get(name)
 	if !ok {
-		return fmt.Errorf("알 수 없는 명령어: %s", name)
+		return fmt.Errorf("unknown command: %s", name)
 	}
 	return cmd.Execute(args)
 }

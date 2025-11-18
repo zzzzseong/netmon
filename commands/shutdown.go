@@ -13,38 +13,38 @@ import (
 	"netmon/style"
 )
 
-// KillCommand는 프로세스를 종료하는 명령어입니다
-type KillCommand struct {
+// ShutdownCommand는 프로세스를 종료하는 명령어입니다
+type ShutdownCommand struct {
 	formatter *formatter.ProcessInfoFormatter
 }
 
-// NewKillCommand는 새로운 KillCommand를 생성합니다
-func NewKillCommand() *KillCommand {
-	return &KillCommand{
+// NewShutdownCommand는 새로운 ShutdownCommand를 생성합니다
+func NewShutdownCommand() *ShutdownCommand {
+	return &ShutdownCommand{
 		formatter: formatter.NewProcessInfoFormatter(),
 	}
 }
 
 // Name은 명령어 이름을 반환합니다
-func (c *KillCommand) Name() string {
-	return "kill"
+func (c *ShutdownCommand) Name() string {
+	return "shutdown"
 }
 
 // Description은 명령어 설명을 반환합니다
-func (c *KillCommand) Description() string {
-	return "프로세스 종료"
+func (c *ShutdownCommand) Description() string {
+	return "Shutdown a process"
 }
 
 // Usage는 명령어 사용법을 반환합니다
-func (c *KillCommand) Usage() string {
-	return "kill <pid>"
+func (c *ShutdownCommand) Usage() string {
+	return "shutdown <pid>"
 }
 
 // Execute는 명령어를 실행합니다
-func (c *KillCommand) Execute(args []string) error {
+func (c *ShutdownCommand) Execute(args []string) error {
 	if len(args) < 1 {
-		errorMsg := style.ErrorStyle.Render("Error: PID가 필요합니다.")
-		usageMsg := style.UsageStyle.Render("사용법: netmon kill <pid>")
+		errorMsg := style.ErrorStyle.Render("Error: PID is required.")
+		usageMsg := style.UsageStyle.Render("Usage: netmon shutdown <pid>")
 		fmt.Fprintf(os.Stderr, "%s\n%s\n", errorMsg, usageMsg)
 		os.Exit(1)
 	}
@@ -52,7 +52,7 @@ func (c *KillCommand) Execute(args []string) error {
 	pidStr := args[0]
 	pid, err := strconv.Atoi(pidStr)
 	if err != nil {
-		errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: 유효하지 않은 PID: %s", pidStr))
+		errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: Invalid PID: %s", pidStr))
 		fmt.Fprintf(os.Stderr, "%s\n", errorMsg)
 		os.Exit(1)
 	}
@@ -60,7 +60,7 @@ func (c *KillCommand) Execute(args []string) error {
 	// 프로세스 정보 가져오기
 	proc, err := process.NewProcess(int32(pid))
 	if err != nil {
-		errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: PID %d의 프로세스를 찾을 수 없습니다: %v", pid, err))
+		errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: Process with PID %d not found: %v", pid, err))
 		fmt.Fprintf(os.Stderr, "%s\n", errorMsg)
 		os.Exit(1)
 	}
@@ -92,36 +92,36 @@ func (c *KillCommand) Execute(args []string) error {
 		Foreground(style.WarningColor).
 		Bold(true).
 		MarginTop(1).
-		Render("⚠️  이 프로세스를 종료하시겠습니까?")
+		Render("⚠️  Do you want to shutdown this process?")
 	fmt.Println(promptTitle)
 
 	prompt := promptui.Select{
 		Label: "",
-		Items: []string{"Kill", "Cancel"},
+		Items: []string{"Shutdown", "Cancel"},
 		Size:  2,
 	}
 
 	index, result, err := prompt.Run()
 	if err != nil {
-		errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: 프롬프트 오류: %v", err))
+		errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: Prompt error: %v", err))
 		fmt.Fprintf(os.Stderr, "%s\n", errorMsg)
 		os.Exit(1)
 	}
 
-	if index == 0 && result == "Kill" {
+	if index == 0 && result == "Shutdown" {
 		// 프로세스 종료
 		err = proc.Kill()
 		if err != nil {
-			errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: 프로세스를 종료할 수 없습니다: %v", err))
+			errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: Failed to shutdown process: %v", err))
 			fmt.Fprintf(os.Stderr, "\n%s\n", errorMsg)
 			os.Exit(1)
 		}
-		successMsg := style.SuccessStyle.Render(fmt.Sprintf("✓ 프로세스 %d (%s)가 성공적으로 종료되었습니다.", pid, processName))
+		successMsg := style.SuccessStyle.Render(fmt.Sprintf("✓ Process %d (%s) has been successfully shut down.", pid, processName))
 		fmt.Printf("\n%s\n", successMsg)
 	} else {
 		cancelMsg := lipgloss.NewStyle().
 			Foreground(style.SubtleColor).
-			Render("취소되었습니다.")
+			Render("Cancelled.")
 		fmt.Printf("\n%s\n", cancelMsg)
 	}
 

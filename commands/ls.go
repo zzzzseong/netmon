@@ -29,7 +29,7 @@ func (c *ListCommand) Name() string {
 
 // Description은 명령어 설명을 반환합니다
 func (c *ListCommand) Description() string {
-	return "활성 포트 목록 표시"
+	return "List active ports"
 }
 
 // Usage는 명령어 사용법을 반환합니다
@@ -42,7 +42,7 @@ func (c *ListCommand) Execute(args []string) error {
 	// 모든 네트워크 연결 가져오기
 	connections, err := net.Connections("inet")
 	if err != nil {
-		errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: 네트워크 연결 정보를 가져올 수 없습니다: %v", err))
+		errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: Failed to get network connection information: %v", err))
 		fmt.Fprintf(os.Stderr, "%s\n", errorMsg)
 		os.Exit(1)
 	}
