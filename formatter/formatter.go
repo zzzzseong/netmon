@@ -46,46 +46,78 @@ func (f *PortTableFormatter) Format(connections map[string]net.ConnectionStat) s
 		}
 		statusStr = statusStyle.Render(statusStr)
 
-		// PID와 프로세스 이름 가져오기
-		pid := int(conn.Pid)
-		processName := "N/A"
+	// PID와 프로세스 이름 가져오기
+	pid := int(conn.Pid)
+	processName := "N/A"
+	username := "N/A"
+	cpuPercent := "N/A"
+	memPercent := "N/A"
 
-		if pid > 0 {
-			proc, err := process.NewProcess(int32(pid))
+	if pid > 0 {
+		proc, err := process.NewProcess(int32(pid))
+		if err == nil {
+			name, err := proc.Name()
 			if err == nil {
-				name, err := proc.Name()
-				if err == nil {
-					processName = name
-				}
+				processName = name
+			}
+
+			// 사용자 이름 가져오기
+			user, err := proc.Username()
+			if err == nil {
+				username = user
+			}
+
+			// CPU 사용률 가져오기 (0.1초 대기)
+			cpu, err := proc.CPUPercent()
+			if err == nil {
+				cpuPercent = fmt.Sprintf("%.1f%%", cpu)
+			}
+
+			// 메모리 사용률 가져오기
+			mem, err := proc.MemoryPercent()
+			if err == nil {
+				memPercent = fmt.Sprintf("%.1f%%", mem)
 			}
 		}
-
-		// 프로토콜 스타일링
-		protocolStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
-		protocolStr := protocolStyle.Render(protocol)
-
-		// PID 스타일링
-		pidStr := fmt.Sprintf("%d", pid)
-		if pid > 0 {
-			pidStr = lipgloss.NewStyle().Foreground(style.InfoColor).Render(pidStr)
-		}
-
-		rows = append(rows, []string{
-			protocolStr,
-			localAddr,
-			statusStr,
-			pidStr,
-			processName,
-		})
 	}
 
-	// 헤더 스타일 적용
+	// 프로토콜 스타일링
+	protocolStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
+	protocolStr := protocolStyle.Render(protocol)
+
+	// PID 스타일링
+	pidStr := fmt.Sprintf("%d", pid)
+	if pid > 0 {
+		pidStr = lipgloss.NewStyle().Foreground(style.InfoColor).Render(pidStr)
+	}
+
+	// CPU, 메모리 스타일링
+	cpuStyle := lipgloss.NewStyle().Foreground(style.WarningColor)
+	memStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
+
+	rows = append(rows, []string{
+		protocolStr,
+		localAddr,
+		statusStr,
+		pidStr,
+		processName,
+		username,
+		cpuStyle.Render(cpuPercent),
+		memStyle.Render(memPercent),
+	})
+	}
+
+	// 헤더 스타일 적용 (가운데 정렬 및 너비 설정)
+	headerStyle := style.HeaderStyle.Copy().Align(lipgloss.Center)
 	styledHeaders := []string{
-		style.HeaderStyle.Render("PROTOCOL"),
-		style.HeaderStyle.Render("LOCAL ADDRESS"),
-		style.HeaderStyle.Render("STATUS"),
-		style.HeaderStyle.Render("PID"),
-		style.HeaderStyle.Render("PROCESS NAME"),
+		headerStyle.Width(10).Render("PROTOCOL"),
+		headerStyle.Width(19).Render("LOCAL ADDRESS"),
+		headerStyle.Width(10).Render("STATUS"),
+		headerStyle.Width(8).Render("PID"),
+		headerStyle.Width(25).Render("PROCESS NAME"),
+		headerStyle.Width(15).Render("USERNAME"),
+		headerStyle.Width(8).Render("CPU %"),
+		headerStyle.Width(8).Render("MEM %"),
 	}
 
 	// 테이블 생성 및 스타일링
@@ -108,7 +140,7 @@ func (f *PortTableFormatter) Format(connections map[string]net.ConnectionStat) s
 		}).
 		Headers(styledHeaders...).
 		Rows(rows...).
-		Width(120)
+		Width(130)
 
 	return t.String()
 }
