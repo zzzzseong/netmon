@@ -86,16 +86,16 @@ func getRoutes() ([]RouteEntry, error) {
 func parseRoutes(output string, isMacOS bool) []RouteEntry {
 	var routes []RouteEntry
 	scanner := bufio.NewScanner(strings.NewReader(output))
-	
+
 	// 첫 번째 줄(헤더) 건너뛰기
 	firstLine := true
-	
+
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" {
 			continue
 		}
-		
+
 		if firstLine {
 			firstLine = false
 			// macOS의 경우 헤더가 있으면 건너뛰기
@@ -104,7 +104,7 @@ func parseRoutes(output string, isMacOS bool) []RouteEntry {
 			}
 			// Linux의 경우 헤더가 없으므로 바로 파싱
 		}
-		
+
 		if isMacOS {
 			route := parseMacOSRoute(line)
 			if route != nil {
@@ -117,38 +117,48 @@ func parseRoutes(output string, isMacOS bool) []RouteEntry {
 			}
 		}
 	}
-	
+
 	return routes
 }
 
-// parseMacOSRoute는 macOS netstat -rn 출력을 파싱합니다
+// parseMacOSRoute는 macOS netstat -rn 출력을 파싱하여 Linux ip route 스타일과 유사하게 변환합니다
 func parseMacOSRoute(line string) *RouteEntry {
 	fields := strings.Fields(line)
 	if len(fields) < 4 {
 		return nil
 	}
-	
-	// netstat -rn 형식: Destination Gateway Flags Netif Expire
+
 	dest := fields[0]
 	gateway := fields[1]
-	iface := ""
-	metric := ""
-	
-	if len(fields) >= 4 {
-		iface = fields[3]
+	iface := fields[3]
+
+	if strings.EqualFold(dest, "destination") ||
+		isIPv6Token(dest) || isIPv6Token(gateway) ||
+		strings.Contains(gateway, "%") ||
+		strings.HasPrefix(iface, "utun") ||
+		strings.HasPrefix(iface, "llw") ||
+		iface == "lo0" {
+		return nil
 	}
-	
-	// default route 처리
+
+	if dest != "default" {
+		if isSystemRouteDestination(dest) || isHostRouteDestination(dest) {
+			return nil
+		}
+	}
+
 	if dest == "default" {
-		dest = "0.0.0.0/0"
+		dest = "default"
 	}
-	
+
+	normalizedGateway := normalizeGatewayToken(gateway)
+
 	return &RouteEntry{
 		Destination: dest,
-		Gateway:     gateway,
+		Gateway:     normalizedGateway,
 		Interface:   iface,
-		Metric:      metric,
-		Source:      "*",
+		Metric:      "",
+		Source:      "",
 	}
 }
 
@@ -158,19 +168,23 @@ func parseLinuxRoute(line string) *RouteEntry {
 	if len(fields) < 1 {
 		return nil
 	}
-	
+
 	route := &RouteEntry{
-		Gateway:   "*",
-		Interface: "N/A",
-		Metric:    "N/A",
-		Source:    "*",
+		Gateway:   "",
+		Interface: "",
+		Metric:    "",
+		Source:    "",
 	}
-	
+
+	if fields[0] == "default" {
+		route.Destination = "default"
+	}
+
 	// ip route show 형식 파싱
 	for i := 0; i < len(fields); i++ {
 		switch fields[i] {
 		case "default":
-			route.Destination = "0.0.0.0/0"
+			route.Destination = "default"
 		case "via":
 			if i+1 < len(fields) {
 				route.Gateway = fields[i+1]
@@ -191,6 +205,14 @@ func parseLinuxRoute(line string) *RouteEntry {
 				route.Source = fields[i+1]
 				i++
 			}
+		case "proto":
+			if i+1 < len(fields) {
+				i++
+			}
+		case "scope":
+			if i+1 < len(fields) {
+				i++
+			}
 		default:
 			// 목적지 네트워크 (CIDR 형식)
 			if strings.Contains(fields[i], "/") || strings.Contains(fields[i], ".") {
@@ -200,11 +222,11 @@ func parseLinuxRoute(line string) *RouteEntry {
 			}
 		}
 	}
-	
+
 	if route.Destination == "" {
 		return nil
 	}
-	
+
 	return route
 }
 
@@ -214,11 +236,11 @@ func formatRouteTable(routes []RouteEntry) string {
 
 	// 기본 게이트웨이를 먼저 표시하기 위해 정렬
 	sort.Slice(routes, func(i, j int) bool {
-		// 기본 게이트웨이(0.0.0.0/0)를 먼저
-		if routes[i].Destination == "0.0.0.0/0" || routes[i].Destination == "default" {
+		// 기본 게이트웨이를 먼저
+		if routes[i].Destination == "default" || routes[i].Destination == "0.0.0.0/0" {
 			return true
 		}
-		if routes[j].Destination == "0.0.0.0/0" || routes[j].Destination == "default" {
+		if routes[j].Destination == "default" || routes[j].Destination == "0.0.0.0/0" {
 			return false
 		}
 		// 그 다음 목적지로 정렬
@@ -238,29 +260,29 @@ func formatRouteTable(routes []RouteEntry) string {
 
 		// 게이트웨이 (Gateway)
 		gatewayStr := route.Gateway
-		if gatewayStr == "" || gatewayStr == "*" {
-			gatewayStr = "*"
+		if gatewayStr == "" {
+			gatewayStr = "-"
 		}
 		gatewayStr = lipgloss.NewStyle().Foreground(style.InfoColor).Render(gatewayStr)
 
 		// 인터페이스 (Interface)
 		ifaceStr := route.Interface
 		if ifaceStr == "" {
-			ifaceStr = "N/A"
+			ifaceStr = "-"
 		}
 		ifaceStr = lipgloss.NewStyle().Foreground(style.SubtleColor).Render(ifaceStr)
 
-		// 메트릭 (Metric) - 우선순위
+		// 메트릭 (Metric)
 		metricStr := route.Metric
 		if metricStr == "" {
-			metricStr = "N/A"
+			metricStr = "-"
 		}
 		metricStr = lipgloss.NewStyle().Foreground(style.SubtleColor).Render(metricStr)
 
 		// Source (소스 주소)
 		sourceStr := route.Source
 		if sourceStr == "" {
-			sourceStr = "*"
+			sourceStr = "-"
 		}
 		sourceStr = lipgloss.NewStyle().Foreground(style.SubtleColor).Render(sourceStr)
 
@@ -307,3 +329,62 @@ func formatRouteTable(routes []RouteEntry) string {
 	return t.String()
 }
 
+func isIPv6Token(value string) bool {
+	return strings.Contains(value, ":")
+}
+
+func isMacAddressToken(value string) bool {
+	parts := strings.Split(value, ":")
+	if len(parts) != 6 {
+		return false
+	}
+	for _, part := range parts {
+		if len(part) == 0 || len(part) > 2 {
+			return false
+		}
+	}
+	return true
+}
+
+func normalizeGatewayToken(gateway string) string {
+	if gateway == "" {
+		return ""
+	}
+	if strings.HasPrefix(gateway, "link#") || isMacAddressToken(gateway) || isIPv6Token(gateway) {
+		return ""
+	}
+	return gateway
+}
+
+func isSystemRouteDestination(dest string) bool {
+	base := dest
+	if slash := strings.Index(base, "/"); slash != -1 {
+		base = base[:slash]
+	}
+	prefixes := []string{
+		"127.",
+		"169.254.",
+		"224.",
+		"255.",
+	}
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(base, prefix) {
+			return true
+		}
+		trimmed := strings.TrimSuffix(prefix, ".")
+		if trimmed != prefix && base == trimmed {
+			return true
+		}
+	}
+	return false
+}
+
+func isHostRouteDestination(dest string) bool {
+	if strings.HasSuffix(dest, "/32") {
+		return true
+	}
+	if strings.Count(dest, ".") == 3 && !strings.Contains(dest, "/") {
+		return true
+	}
+	return false
+}
