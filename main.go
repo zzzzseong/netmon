@@ -12,6 +12,7 @@ func main() {
 	// 명령어 레지스트리 생성 및 등록
 	registry := commands.NewRegistry()
 	registry.Register(commands.NewListCommand())
+	registry.Register(commands.NewIPCommand())
 	registry.Register(commands.NewShutdownCommand())
 	registry.Register(commands.NewFindCommand())
 	registry.Register(commands.NewHelpCommand(registry))
