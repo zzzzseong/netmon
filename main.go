@@ -13,6 +13,7 @@ func main() {
 	registry := commands.NewRegistry()
 	registry.Register(commands.NewListCommand())
 	registry.Register(commands.NewIPCommand())
+	registry.Register(commands.NewRouteCommand())
 	registry.Register(commands.NewShutdownCommand())
 	registry.Register(commands.NewFindCommand())
 	registry.Register(commands.NewHelpCommand(registry))
