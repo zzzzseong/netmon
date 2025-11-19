@@ -15,11 +15,16 @@ A modern, beautifully designed network monitoring tool built with Go that provid
 
 ## 📦 Installation
 
-### Prerequisites
+### Homebrew (Recommended)
 
-- Go 1.25 or higher
+```bash
+brew install zzzzseong/netmon/netmon
+```
 
 ### Build from Source
+
+**Prerequisites:**
+- Go 1.25 or higher
 
 ```bash
 # Clone the repository
@@ -39,12 +44,9 @@ sudo mv netmon /usr/local/bin/
 go run main.go ls
 ```
 
-### Homebrew (Coming Soon)
+### Download Pre-built Binaries
 
-```bash
-# Installation via Homebrew will be available soon
-# brew install netmon
-```
+Pre-built binaries for macOS and Linux are available in the [Releases](https://github.com/zzzzseong/netmon/releases) section.
 
 ## 🚀 Usage
 
@@ -185,3 +187,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **GitHub**: https://github.com/zzzzseong/netmon
 - **Issues**: https://github.com/zzzzseong/netmon/issues
+- **Releases**: https://github.com/zzzzseong/netmon/releases
