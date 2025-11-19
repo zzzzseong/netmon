@@ -17,18 +17,21 @@ type Command interface {
 // Registry는 명령어 레지스트리입니다
 type Registry struct {
 	commands map[string]Command
+	order    []Command // 등록 순서 유지
 }
 
 // NewRegistry는 새로운 명령어 레지스트리를 생성합니다
 func NewRegistry() *Registry {
 	return &Registry{
 		commands: make(map[string]Command),
+		order:    make([]Command, 0),
 	}
 }
 
 // Register는 명령어를 등록합니다
 func (r *Registry) Register(cmd Command) {
 	r.commands[cmd.Name()] = cmd
+	r.order = append(r.order, cmd)
 }
 
 // Get은 명령어를 가져옵니다
@@ -37,13 +40,9 @@ func (r *Registry) Get(name string) (Command, bool) {
 	return cmd, ok
 }
 
-// List는 등록된 모든 명령어를 반환합니다
+// List는 등록된 모든 명령어를 등록 순서대로 반환합니다
 func (r *Registry) List() []Command {
-	cmds := make([]Command, 0, len(r.commands))
-	for _, cmd := range r.commands {
-		cmds = append(cmds, cmd)
-	}
-	return cmds
+	return r.order
 }
 
 

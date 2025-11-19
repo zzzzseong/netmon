@@ -40,6 +40,12 @@ func (c *HelpCommand) Execute(args []string) error {
 	return nil
 }
 
+// Version 정보 (main 패키지에서 설정)
+var (
+	Version   = "1.1.1"
+	BuildDate = "2025-01-19"
+)
+
 // PrintUsage는 사용법을 출력합니다
 func PrintUsage(registry *Registry) {
 	// ASCII Art
@@ -55,16 +61,23 @@ func PrintUsage(registry *Registry) {
 		Foreground(style.PrimaryColor).
 		Bold(true)
 
+	// Version 정보
+	versionText := fmt.Sprintf("Version %s", Version)
+	versionStyle := lipgloss.NewStyle().
+		Foreground(style.SecondaryColor).
+		Bold(true).
+		MarginTop(1)
+
 	// Description
 	descText := "A powerful CLI tool for monitoring network connections and managing processes."
 	descStyle := lipgloss.NewStyle().
 		Foreground(style.SubtleColor).
 		Italic(true).
-		MarginTop(1).
 		MarginBottom(2)
 
 	// ASCII Art 출력
 	fmt.Print(asciiStyle.Render(asciiArt))
+	fmt.Println(versionStyle.Render(versionText))
 	fmt.Println(descStyle.Render(descText))
 
 	// Usage 섹션
@@ -98,11 +111,25 @@ func PrintUsage(registry *Registry) {
 	fmt.Println(commandsHeader)
 
 	// 명령어 목록을 박스로 감싸기
+	// 가장 긴 명령어 길이 계산
+	maxUsageLen := 0
+	for _, cmd := range registry.List() {
+		usageLen := len(fmt.Sprintf("  netmon %s", cmd.Usage()))
+		if usageLen > maxUsageLen {
+			maxUsageLen = usageLen
+		}
+	}
+	
 	var commandsList string
 	for i, cmd := range registry.List() {
-		cmdLine := style.CommandStyle.Render(fmt.Sprintf("  netmon %s", cmd.Usage()))
+		usage := fmt.Sprintf("  netmon %s", cmd.Usage())
+		// 패딩 추가 (스타일링 전)
+		padding := maxUsageLen - len(usage) + 4
+		usage += fmt.Sprintf("%*s", padding, "")
+		
+		cmdLine := style.CommandStyle.Render(usage)
 		desc := style.DescStyle.Render(cmd.Description())
-		commandsList += fmt.Sprintf("%-32s %s", cmdLine, desc)
+		commandsList += cmdLine + desc
 		if i < len(registry.List())-1 {
 			commandsList += "\n"
 		}
