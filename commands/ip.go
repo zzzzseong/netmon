@@ -33,11 +33,20 @@ func (c *IPCommand) Description() string {
 
 // Usage는 명령어 사용법을 반환합니다
 func (c *IPCommand) Usage() string {
-	return "ip"
+	return "ip [-a|--all]"
 }
 
 // Execute는 명령어를 실행합니다
 func (c *IPCommand) Execute(args []string) error {
+	// -a 또는 --all 플래그 확인
+	showAll := false
+	for _, arg := range args {
+		if arg == "-a" || arg == "--all" {
+			showAll = true
+			break
+		}
+	}
+
 	// 네트워크 인터페이스 정보 가져오기
 	interfaces, err := net.Interfaces()
 	if err != nil {
@@ -52,14 +61,14 @@ func (c *IPCommand) Execute(args []string) error {
 	})
 
 	// 테이블 생성
-	table := formatInterfaceTable(interfaces)
+	table := formatInterfaceTable(interfaces, showAll)
 	fmt.Println(table)
 
 	return nil
 }
 
 // formatInterfaceTable은 네트워크 인터페이스 정보를 테이블 형식으로 포맷팅합니다
-func formatInterfaceTable(interfaces []net.InterfaceStat) string {
+func formatInterfaceTable(interfaces []net.InterfaceStat, showAll bool) string {
 	var rows [][]string
 
 	for _, iface := range interfaces {
@@ -73,7 +82,7 @@ func formatInterfaceTable(interfaces []net.InterfaceStat) string {
 		}
 		macStr = lipgloss.NewStyle().Foreground(style.SubtleColor).Render(macStr)
 
-		// IP 주소들 (IPv4와 IPv6 모두)
+		// IP 주소들
 		var ipAddrs []string
 		for _, addr := range iface.Addrs {
 			// IP 주소와 서브넷 마스크 파싱
@@ -84,12 +93,12 @@ func formatInterfaceTable(interfaces []net.InterfaceStat) string {
 
 			// IPv4와 IPv6 구분
 			if ip.To4() != nil {
-				// IPv4
+				// IPv4 - 항상 포함
 				mask := ipNet.Mask
 				ones, _ := mask.Size()
 				ipAddrs = append(ipAddrs, fmt.Sprintf("%s/%d", ip.String(), ones))
-			} else {
-				// IPv6
+			} else if showAll {
+				// IPv6 - showAll이 true일 때만 포함
 				ones, _ := ipNet.Mask.Size()
 				ipAddrs = append(ipAddrs, fmt.Sprintf("%s/%d", ip.String(), ones))
 			}
@@ -98,6 +107,10 @@ func formatInterfaceTable(interfaces []net.InterfaceStat) string {
 		// IP 주소 문자열 생성
 		ipStr := strings.Join(ipAddrs, ", ")
 		if ipStr == "" {
+			// showAll이 false면 IP 주소가 없는 인터페이스는 건너뛰기
+			if !showAll {
+				continue
+			}
 			ipStr = "N/A"
 		}
 		ipStr = lipgloss.NewStyle().Foreground(style.InfoColor).Render(ipStr)
@@ -129,13 +142,14 @@ func formatInterfaceTable(interfaces []net.InterfaceStat) string {
 		})
 	}
 
-	// 헤더 스타일 적용
+	// 헤더 스타일 적용 (가운데 정렬 및 너비 설정)
+	headerStyle := style.HeaderStyle.Copy().Align(lipgloss.Center)
 	styledHeaders := []string{
-		style.HeaderStyle.Render("INTERFACE"),
-		style.HeaderStyle.Render("IP ADDRESS"),
-		style.HeaderStyle.Render("MAC ADDRESS"),
-		style.HeaderStyle.Render("STATUS"),
-		style.HeaderStyle.Render("MTU"),
+		headerStyle.Width(12).Render("INTERFACE"),
+		headerStyle.Width(40).Render("IP ADDRESS"),
+		headerStyle.Width(20).Render("MAC ADDRESS"),
+		headerStyle.Width(8).Render("STATUS"),
+		headerStyle.Width(6).Render("MTU"),
 	}
 
 	// 테이블 생성 및 스타일링
@@ -158,7 +172,7 @@ func formatInterfaceTable(interfaces []net.InterfaceStat) string {
 		}).
 		Headers(styledHeaders...).
 		Rows(rows...).
-		Width(140)
+		Width(110)
 
 	return t.String()
 }
