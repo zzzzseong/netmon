@@ -4,26 +4,43 @@ import (
 	"fmt"
 
 	"github.com/shirou/gopsutil/v3/net"
+	"github.com/shirou/gopsutil/v3/process"
 )
 
-// 연결 타입을 문자열로 변환 (1=TCP, 2=UDP)
+// ConnectionType 상수
+const (
+	TCP ConnectionType = 1
+	UDP ConnectionType = 2
+)
+
+type ConnectionType uint32
+
+// ProcessInfo는 프로세스 정보를 담는 구조체
+type ProcessInfo struct {
+	Name       string
+	Username   string
+	CPUPercent string
+	MemPercent string
+}
+
+// ConnectionTypeToString 연결 타입을 문자열로 변환
 func ConnectionTypeToString(connType uint32) string {
-	switch connType {
-	case 1:
+	switch ConnectionType(connType) {
+	case TCP:
 		return "TCP"
-	case 2:
+	case UDP:
 		return "UDP"
 	default:
 		return "UNKNOWN"
 	}
 }
 
-// 연결 타입이 UDP인지 확인
+// IsUDP 연결 타입이 UDP인지 확인
 func IsUDP(connType uint32) bool {
-	return connType == 2
+	return ConnectionType(connType) == UDP
 }
 
-// LISTEN 상태인 연결만 필터링
+// FilterListeningConnections LISTEN 상태인 연결만 필터링
 func FilterListeningConnections(connections []net.ConnectionStat) map[string]net.ConnectionStat {
 	listeningConns := make(map[string]net.ConnectionStat)
 	for _, conn := range connections {
@@ -34,5 +51,46 @@ func FilterListeningConnections(connections []net.ConnectionStat) map[string]net
 		}
 	}
 	return listeningConns
+}
+
+// GetProcessInfo 프로세스 정보를 가져옴
+func GetProcessInfo(pid int32) ProcessInfo {
+	info := ProcessInfo{
+		Name:       "N/A",
+		Username:   "N/A",
+		CPUPercent: "N/A",
+		MemPercent: "N/A",
+	}
+
+	if pid <= 0 {
+		return info
+	}
+
+	proc, err := process.NewProcess(pid)
+	if err != nil {
+		return info
+	}
+
+	// 프로세스 이름
+	if name, err := proc.Name(); err == nil {
+		info.Name = name
+	}
+
+	// 사용자 이름
+	if username, err := proc.Username(); err == nil {
+		info.Username = username
+	}
+
+	// CPU 사용률
+	if cpu, err := proc.CPUPercent(); err == nil {
+		info.CPUPercent = fmt.Sprintf("%.1f%%", cpu)
+	}
+
+	// 메모리 사용률
+	if mem, err := proc.MemoryPercent(); err == nil {
+		info.MemPercent = fmt.Sprintf("%.1f%%", mem)
+	}
+
+	return info
 }
 
