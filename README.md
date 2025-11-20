@@ -6,9 +6,10 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.1-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Version](https://img.shields.io/badge/version-1.1.2-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/zzzzseong/netmon)
 
-*A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, and managing processes on macOS and Linux.*
+*A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.*
 
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Commands](#-commands)
 
@@ -27,7 +28,11 @@
   - IPv4 addresses by default
   - IPv6 support with `-a` flag
   - Filter interfaces with active IPs
-- **🛣️ Routing Table** - Display system routing information
+- **🛣️ Routing Table** - Display system routing information with smart filtering
+  - Native OS APIs (Netlink on Linux, BSD routing socket on macOS, Win32 API on Windows)
+  - Smart filtering (excludes /32 hosts, link-local, multicast, broadcast)
+  - Linux-style output format support
+  - Cross-platform compatible
 
 ### 🔍 Process Management
 - **Port Search** - Find processes using specific ports (like `lsof -i :port`)
@@ -138,11 +143,42 @@ netmon ip --all
 
 ### 🛣️ View Routing Table
 
-Display system routing information:
+Display system routing information with smart filtering:
 
 ```bash
+# Table format (default)
 netmon route
 ```
+
+**Output:**
+```
+╭───────────────────────────┬───────────────────────────┬───────────────────────────┬───────────────────────────┬──────────────────────────╮
+│  DESTINATION              │  GATEWAY                  │  INTERFACE                │  METRIC                   │  SOURCE                  │
+├───────────────────────────┼───────────────────────────┼───────────────────────────┼───────────────────────────┼──────────────────────────┤
+│ default                   │ 172.16.3.254              │ en0                       │ -                         │ 172.16.0.99              │
+│ 172.16.0.0/22             │ -                         │ en0                       │ -                         │ 172.16.0.99              │
+│ 10.10.0.0/24              │ -                         │ docker0                   │ -                         │ 10.10.0.1                │
+╰───────────────────────────┴───────────────────────────┴───────────────────────────┴───────────────────────────┴──────────────────────────╯
+```
+
+```bash
+# Linux-style format (ip route style)
+netmon route --format linux
+```
+
+**Output:**
+```
+default via 172.16.3.254 dev en0 src 172.16.0.99
+172.16.0.0/22 dev en0 src 172.16.0.99
+10.10.0.0/24 dev docker0 src 10.10.0.1
+```
+
+**New in v1.1.2:**
+- ✨ **Native OS APIs** - Uses Netlink (Linux), BSD routing socket (macOS), Win32 API (Windows)
+- ✨ **Smart filtering** - Automatically excludes /32 hosts, link-local, multicast, broadcast routes
+- ✨ **Linux-style output** - Support for `--format linux` flag (ip route style)
+- ✨ **Reduced output** - From 130+ routes to essential 2-3 routes for better readability
+- ✨ **Cross-platform** - Works seamlessly on Linux, macOS (Intel & ARM), and Windows
 
 ---
 
@@ -218,7 +254,7 @@ The command will:
 |---------|-------------|-------|-------|
 | `ls` | List all active ports with process metrics | `netmon ls` | - |
 | `ip` | Show network interfaces | `netmon ip` | `-a, --all` (show IPv6) |
-| `route` | Display routing table | `netmon route` | - |
+| `route` | Display routing table with smart filtering | `netmon route` | `--format table\|linux` |
 | `find` | Find process using a port | `netmon find <port>` | - |
 | `shutdown` | Shutdown a process | `netmon shutdown <pid>` | - |
 | `help` | Show help information | `netmon help` | - |
@@ -236,35 +272,47 @@ The command will:
 
 ---
 
-## 🆕 What's New in v1.1.1
+## 🆕 What's New in v1.1.2
 
-### Enhanced Port Listing
-- ✨ **Username display** - See which user owns each process
-- ✨ **CPU usage** - Real-time CPU percentage per process
-- ✨ **Memory usage** - Real-time memory percentage per process
-- ✨ **Center-aligned headers** - Improved visual layout
-- ✨ **Optimized columns** - Better fit for various terminal sizes
+### 🚀 Major Route Command Refactoring
+- ✨ **Native OS APIs** - Direct system calls instead of command parsing
+  - Linux: `vishvananda/netlink` library (Netlink RTM_GETROUTE)
+  - macOS/BSD: `golang.org/x/net/route` (BSD routing socket)
+  - Windows: `GetIpForwardTable2()` Win32 API
+- ✨ **Smart Route Filtering** - Automatically excludes unnecessary routes
+  - /32 single host routes
+  - Link-local addresses (169.254.0.0/16)
+  - Multicast addresses (224.0.0.0/4)
+  - Broadcast addresses (255.255.255.255/32)
+  - Loopback addresses (127.0.0.0/8)
+- ✨ **Linux-style Output** - New `--format linux` flag for ip route style
+- ✨ **Dramatic Output Reduction** - From 130+ routes to 2-3 essential routes
+- ✨ **True Cross-platform** - Tested on Linux, macOS (Intel & ARM), Windows
 
-### Improved IP Command
-- ✨ **IPv4 default** - Cleaner output showing only IPv4 addresses
-- ✨ **Smart filtering** - Hide interfaces without IP addresses
-- ✨ **IPv6 support** - Use `-a` flag to show all addresses
-- ✨ **Compact layout** - Optimized column widths
+### 🛠️ Technical Improvements
+- 🏗️ **Provider Architecture** - Clean OS abstraction layer with RouteProvider interface
+- ⚡ **Performance** - Direct API calls eliminate external process overhead
+- 🎯 **Accuracy** - Native APIs provide more reliable and detailed routing information
+- 🔧 **Maintainability** - OS-specific implementations cleanly separated with build tags
 
-### Code Improvements
-- ⚡ **Performance optimizations** - Faster execution and lower memory usage
-- 🏗️ **Refactored codebase** - Better maintainability and extensibility
-- 🎨 **Reusable styles** - More consistent UI throughout
+### Previous Updates (v1.1.1)
+- ✨ Enhanced port listing with username, CPU, and memory metrics
+- ✨ Improved IP command with IPv4 default and smart filtering
+- ✨ Center-aligned headers and optimized column widths
 
 ---
 
 ## 🛠️ Tech Stack
 
 - **Language**: Go 1.25+
-- **Dependencies**:
+- **Core Dependencies**:
   - [`github.com/shirou/gopsutil/v3`](https://github.com/shirou/gopsutil) - System and process utilities
   - [`github.com/charmbracelet/lipgloss`](https://github.com/charmbracelet/lipgloss) - Terminal styling
   - [`github.com/manifoldco/promptui`](https://github.com/manifoldco/promptui) - Interactive prompts
+- **Routing System**:
+  - [`github.com/vishvananda/netlink`](https://github.com/vishvananda/netlink) - Linux netlink interface
+  - [`golang.org/x/net/route`](https://golang.org/x/net/route) - BSD routing socket interface
+  - [`golang.org/x/sys/windows`](https://golang.org/x/sys/windows) - Windows system calls
 
 ---
 
@@ -292,6 +340,12 @@ netmon ip
 
 ```bash
 netmon ip -a
+```
+
+### View routing table in Linux style
+
+```bash
+netmon route --format linux
 ```
 
 ### Shutdown a process by PID
