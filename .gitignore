@@ -20,6 +20,7 @@ go.work
 # Build output
 netmon
 /netmon
+/netmon-*
 
 # IDE
 .idea/
