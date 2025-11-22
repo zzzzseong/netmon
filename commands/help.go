@@ -7,6 +7,12 @@ import (
 	"netmon/style"
 )
 
+// Version 정보는 main 패키지에서 주입됩니다
+var (
+	Version   string
+	BuildDate string
+)
+
 // HelpCommand는 도움말을 표시하는 명령어입니다
 type HelpCommand struct {
 	registry *Registry
@@ -39,12 +45,6 @@ func (c *HelpCommand) Execute(args []string) error {
 	PrintUsage(c.registry)
 	return nil
 }
-
-// Version 정보 (main 패키지에서 설정)
-var (
-	Version   = "1.1.1"
-	BuildDate = "2025-01-19"
-)
 
 // PrintUsage는 사용법을 출력합니다
 func PrintUsage(registry *Registry) {
