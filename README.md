@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.3-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Version](https://img.shields.io/badge/version-1.1.4-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/zzzzseong/netmon)
 
 *A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.*
@@ -52,10 +52,63 @@
 
 ## 📦 Installation
 
-### 🍺 Homebrew (Recommended)
+### 🍺 Homebrew (macOS Recommended)
 
 ```bash
 brew install zzzzseong/netmon/netmon
+```
+
+### 🐧 Linux - Quick Install Script
+
+The easiest way to install on Linux:
+
+```bash
+# Install latest version
+curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash
+
+# Install specific version
+curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.1.4
+```
+
+The script automatically:
+- Detects OS and architecture (Linux AMD64/ARM64)
+- Downloads the latest version
+- Installs to `/usr/local/bin`
+- Verifies installation
+
+**After installation, you can immediately use netmon:**
+
+```bash
+netmon ls        # List active ports
+netmon ip        # Show network interfaces
+netmon --help    # Show all commands
+```
+
+> **Note:** If `netmon` is not found after installation, try opening a new terminal or run `hash -r` to refresh the command cache.
+
+### 📥 Download Pre-built Binaries
+
+Pre-built binaries are available in the [Releases](https://github.com/zzzzseong/netmon/releases) section.
+
+**For Linux:**
+- `netmon-linux-amd64.tar.gz` (Intel/AMD 64-bit)
+- `netmon-linux-arm64.tar.gz` (ARM 64-bit)
+
+**For macOS:**
+- `netmon-darwin-amd64.tar.gz` (Intel)
+- `netmon-darwin-arm64.tar.gz` (Apple Silicon)
+
+**Installation:**
+
+```bash
+# Download and extract
+tar -xzf netmon-<platform>-<arch>.tar.gz
+
+# Install (optional)
+sudo mv netmon /usr/local/bin/
+
+# Verify executable permissions
+chmod +x /usr/local/bin/netmon
 ```
 
 ### 🔨 Build from Source
@@ -73,10 +126,6 @@ go build -o netmon .
 # Install (optional)
 sudo mv netmon /usr/local/bin/
 ```
-
-### 📥 Download Pre-built Binaries
-
-Pre-built binaries for macOS and Linux are available in the [Releases](https://github.com/zzzzseong/netmon/releases) section.
 
 ---
 
@@ -269,12 +318,12 @@ The command will:
 
 ---
 
-## 🆕 What's New in v1.1.3
+## 🆕 What's New in v1.1.4
 
-- 🗺️ **New traceroute command** with animated loading and color-coded RTT values
-- 📦 **Version command** added to help menu for easy version checking
-- 🎯 **Simplified command options** for cleaner, more intuitive usage
-- ⚡ **Enhanced UX** with loading indicators and consistent design
+- 🐧 **Linux installation script** - Easy one-command installation for Linux users
+- 📁 **Improved project structure** - Installation scripts organized in `scripts/` directory
+- 📝 **README optimization** - Cleaner documentation with removed duplicates
+
 
 > 📜 For detailed changelog, see [GitHub Releases](https://github.com/zzzzseong/netmon/releases)
 
@@ -291,62 +340,6 @@ The command will:
   - [`github.com/vishvananda/netlink`](https://github.com/vishvananda/netlink) - Linux netlink interface
   - [`golang.org/x/net/route`](https://golang.org/x/net/route) - BSD routing socket interface
   - [`golang.org/x/sys/windows`](https://golang.org/x/sys/windows) - Windows system calls
-
----
-
-## 📖 Examples
-
-### Check if port 3000 is in use
-
-```bash
-netmon find 3000
-```
-
-### Monitor all active ports with process metrics
-
-```bash
-netmon ls
-```
-
-### View only your active network interfaces
-
-```bash
-netmon ip
-```
-
-### View all network interfaces including IPv6
-
-```bash
-netmon ip -a
-```
-
-### Trace route to a host
-
-```bash
-netmon traceroute google.com
-```
-
-### Check version
-
-```bash
-netmon version
-```
-
-### Shutdown a process by PID
-
-```bash
-netmon shutdown 12345
-```
-
-### Get help
-
-```bash
-netmon help
-# or
-netmon --help
-# or
-netmon -h
-```
 
 ---
 
