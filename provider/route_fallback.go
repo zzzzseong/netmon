@@ -46,7 +46,7 @@ func (p *FallbackRouteProvider) GetRoutes() ([]RouteEntry, error) {
 
 // parseLinuxRoute는 Linux "ip route" 출력을 파싱합니다
 func parseLinuxRoute(output string) []RouteEntry {
-	var routes []RouteEntry
+	routes := make([]RouteEntry, 0, 32) // 일반적으로 라우트는 많지 않음
 	scanner := bufio.NewScanner(strings.NewReader(output))
 
 	for scanner.Scan() {
@@ -98,7 +98,7 @@ func parseLinuxRoute(output string) []RouteEntry {
 
 // parseBSDRoute는 BSD "netstat -rn" 출력을 파싱합니다
 func parseBSDRoute(output string) []RouteEntry {
-	var routes []RouteEntry
+	routes := make([]RouteEntry, 0, 32) // 일반적으로 라우트는 많지 않음
 	scanner := bufio.NewScanner(strings.NewReader(output))
 
 	inIPv4Section := false
@@ -168,7 +168,7 @@ func parseBSDRoute(output string) []RouteEntry {
 
 // parseWindowsRoute는 Windows "route print" 출력을 파싱합니다
 func parseWindowsRoute(output string) []RouteEntry {
-	var routes []RouteEntry
+	routes := make([]RouteEntry, 0, 32) // 일반적으로 라우트는 많지 않음
 	scanner := bufio.NewScanner(strings.NewReader(output))
 
 	inIPv4Section := false

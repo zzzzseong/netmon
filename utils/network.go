@@ -55,6 +55,7 @@ func FilterListeningConnections(connections []net.ConnectionStat) map[string]net
 
 // GetProcessInfo 프로세스 정보를 가져옴
 func GetProcessInfo(pid int32) ProcessInfo {
+	// 기본값 설정
 	info := ProcessInfo{
 		Name:       "N/A",
 		Username:   "N/A",
@@ -71,23 +72,27 @@ func GetProcessInfo(pid int32) ProcessInfo {
 		return info
 	}
 
-	// 프로세스 이름
-	if name, err := proc.Name(); err == nil {
+	// 프로세스 이름 (필수 정보이므로 먼저 가져옴)
+	name, nameErr := proc.Name()
+	if nameErr == nil {
 		info.Name = name
 	}
 
 	// 사용자 이름
-	if username, err := proc.Username(); err == nil {
+	username, userErr := proc.Username()
+	if userErr == nil {
 		info.Username = username
 	}
 
-	// CPU 사용률
-	if cpu, err := proc.CPUPercent(); err == nil {
+	// CPU 사용률 (에러 무시)
+	cpu, cpuErr := proc.CPUPercent()
+	if cpuErr == nil {
 		info.CPUPercent = fmt.Sprintf("%.1f%%", cpu)
 	}
 
-	// 메모리 사용률
-	if mem, err := proc.MemoryPercent(); err == nil {
+	// 메모리 사용률 (에러 무시)
+	mem, memErr := proc.MemoryPercent()
+	if memErr == nil {
 		info.MemPercent = fmt.Sprintf("%.1f%%", mem)
 	}
 

@@ -70,13 +70,12 @@ func (c *FindCommand) Execute(args []string) error {
 		os.Exit(1)
 	}
 
-	// LISTEN 상태인 연결만 필터링
-	listeningConns := utils.FilterListeningConnections(connections)
-
-	// 특정 포트를 사용하는 연결만 필터링
+	// LISTEN 상태이면서 특정 포트를 사용하는 연결만 필터링 (한 번의 순회로 처리)
 	foundConns := make(map[string]net.ConnectionStat)
-	for _, conn := range listeningConns {
-		if conn.Laddr.Port == uint32(port) {
+	for _, conn := range connections {
+		// LISTEN 상태 또는 UDP이면서 포트가 일치하는 경우
+		isListening := conn.Status == "LISTEN" || (utils.IsUDP(conn.Type) && conn.Laddr.Port > 0)
+		if isListening && conn.Laddr.Port == uint32(port) {
 			key := fmt.Sprintf("%d:%d", conn.Type, conn.Laddr.Port)
 			foundConns[key] = conn
 		}

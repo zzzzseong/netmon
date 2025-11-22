@@ -47,7 +47,8 @@ func getStatusStyled(status string) string {
 
 // Format은 연결 정보를 테이블 형식으로 포맷팅합니다
 func (f *PortTableFormatter) Format(connections map[string]net.ConnectionStat) string {
-	var rows [][]string
+	// 사이즈가 확정된 슬라이스로 메모리 할당 최적화
+	rows := make([][]string, 0, len(connections))
 	
 	for _, conn := range connections {
 		// 프로토콜 및 주소

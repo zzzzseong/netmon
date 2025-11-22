@@ -69,7 +69,8 @@ func (c *IPCommand) Execute(args []string) error {
 
 // formatInterfaceTable은 네트워크 인터페이스 정보를 테이블 형식으로 포맷팅합니다
 func formatInterfaceTable(interfaces []net.InterfaceStat, showAll bool) string {
-	var rows [][]string
+	// 메모리 사전 할당 최적화
+	rows := make([][]string, 0, len(interfaces))
 
 	for _, iface := range interfaces {
 		// 인터페이스 이름

@@ -32,41 +32,33 @@ func ShouldIncludeRoute(entry RouteEntry) bool {
 	}
 
 	ip := ipNet.IP
-
-	// 5. 루프백 (127.0.0.0/8) 제외
-	if ip[0] == 127 {
+	
+	// IP 길이 체크 (IPv4만 처리)
+	if len(ip) < 4 {
 		return false
 	}
 
-	// 6. Link-local (169.254.0.0/16) 제외
-	if ip[0] == 169 && ip[1] == 254 {
+	// 5-8. 특수 IP 범위 체크를 한 번에 처리
+	firstOctet := ip[0]
+	switch {
+	case firstOctet == 127: // 루프백 (127.0.0.0/8)
+		return false
+	case firstOctet == 169 && ip[1] == 254: // Link-local (169.254.0.0/16)
+		return false
+	case firstOctet >= 224 && firstOctet <= 239: // Multicast (224.0.0.0/4)
+		return false
+	case firstOctet == 255: // Broadcast
 		return false
 	}
 
-	// 7. Multicast (224.0.0.0/4) 제외
-	if ip[0] >= 224 && ip[0] <= 239 {
-		return false
-	}
-
-	// 8. Broadcast (255.255.255.255/32) 제외
-	if ip[0] == 255 {
-		return false
-	}
-
-	// 9. 매우 작은 서브넷은 포함 (직접 연결된 네트워크)
-	// /16 이하의 네트워크는 일반적으로 유의미한 라우트
+	// 9-10. 서브넷 크기에 따른 필터링
 	ones, _ := ipNet.Mask.Size()
 	if ones <= 24 {
 		return true
 	}
 
-	// 10. /25 ~ /31은 선택적으로 포함 (Docker 등의 네트워크일 수 있음)
-	// 게이트웨이가 없으면 직접 연결된 네트워크일 가능성이 높음
-	if ones >= 25 && ones <= 31 {
-		return entry.Gateway == "" || entry.Gateway == "-"
-	}
-
-	return false
+	// /25 ~ /31은 게이트웨이가 없는 경우만 포함 (직접 연결된 네트워크)
+	return ones <= 31 && (entry.Gateway == "" || entry.Gateway == "-")
 }
 
 // FilterRoutes는 RouteEntry 슬라이스를 필터링합니다

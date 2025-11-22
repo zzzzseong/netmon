@@ -238,15 +238,18 @@ func parseUnixTracerouteStreaming(scanner *bufio.Scanner) {
 
 		// RTT 추출
 		rttMatches := rttRegex.FindAllStringSubmatch(rest, -1)
-		if len(rttMatches) > 0 {
-			if len(rttMatches) > 0 {
-				hop.RTT1 = rttMatches[0][1] + " ms"
+		for i, match := range rttMatches {
+			if i >= 3 {
+				break
 			}
-			if len(rttMatches) > 1 {
-				hop.RTT2 = rttMatches[1][1] + " ms"
-			}
-			if len(rttMatches) > 2 {
-				hop.RTT3 = rttMatches[2][1] + " ms"
+			rttValue := match[1] + " ms"
+			switch i {
+			case 0:
+				hop.RTT1 = rttValue
+			case 1:
+				hop.RTT2 = rttValue
+			case 2:
+				hop.RTT3 = rttValue
 			}
 		}
 
@@ -299,15 +302,18 @@ func parseWindowsTracertStreaming(scanner *bufio.Scanner) {
 			}
 
 			rttMatches := rttRegex.FindAllStringSubmatch(rest, -1)
-			if len(rttMatches) > 0 {
-				if len(rttMatches) > 0 {
-					hop.RTT1 = rttMatches[0][1] + " ms"
+			for i, match := range rttMatches {
+				if i >= 3 {
+					break
 				}
-				if len(rttMatches) > 1 {
-					hop.RTT2 = rttMatches[1][1] + " ms"
-				}
-				if len(rttMatches) > 2 {
-					hop.RTT3 = rttMatches[2][1] + " ms"
+				rttValue := match[1] + " ms"
+				switch i {
+				case 0:
+					hop.RTT1 = rttValue
+				case 1:
+					hop.RTT2 = rttValue
+				case 2:
+					hop.RTT3 = rttValue
 				}
 			}
 		}

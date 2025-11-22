@@ -156,26 +156,3 @@ func parseSockaddrInet(sa *sockaddrInet) net.IP {
 	return nil
 }
 
-// getInterfaceIP는 인터페이스 이름으로부터 IP 주소를 가져옵니다
-func getInterfaceIP(ifname string) string {
-	iface, err := net.InterfaceByName(ifname)
-	if err != nil {
-		return ""
-	}
-
-	addrs, err := iface.Addrs()
-	if err != nil {
-		return ""
-	}
-
-	for _, addr := range addrs {
-		if ipnet, ok := addr.(*net.IPNet); ok {
-			if ipv4 := ipnet.IP.To4(); ipv4 != nil {
-				return ipv4.String()
-			}
-		}
-	}
-
-	return ""
-}
-

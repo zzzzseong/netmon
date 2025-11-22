@@ -61,19 +61,24 @@ func (c *RouteCommand) Execute(args []string) error {
 
 // formatRouteTable은 라우팅 테이블 정보를 테이블 형식으로 포맷팅합니다
 func formatRouteTable(routes []RouteEntry) string {
-	var rows [][]string
+	// 메모리 사전 할당 최적화
+	rows := make([][]string, 0, len(routes))
 
 	// 기본 게이트웨이를 먼저 표시하기 위해 정렬
 	sort.Slice(routes, func(i, j int) bool {
+		destI, destJ := routes[i].Destination, routes[j].Destination
 		// 기본 게이트웨이를 먼저
-		if routes[i].Destination == "default" || routes[i].Destination == "0.0.0.0/0" {
+		isDefaultI := destI == "default" || destI == "0.0.0.0/0"
+		isDefaultJ := destJ == "default" || destJ == "0.0.0.0/0"
+		
+		if isDefaultI {
 			return true
 		}
-		if routes[j].Destination == "default" || routes[j].Destination == "0.0.0.0/0" {
+		if isDefaultJ {
 			return false
 		}
 		// 그 다음 목적지로 정렬
-		return routes[i].Destination < routes[j].Destination
+		return destI < destJ
 	})
 
 	for _, route := range routes {
