@@ -26,6 +26,7 @@ func main() {
 	registry.Register(commands.NewRouteCommand())
 	registry.Register(commands.NewFindCommand())
 	registry.Register(commands.NewShutdownCommand())
+	registry.Register(commands.NewTraceCommand())
 	registry.Register(commands.NewVersionCommand())
 	registry.Register(commands.NewHelpCommand(registry))
 
