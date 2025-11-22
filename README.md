@@ -72,6 +72,7 @@ curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/insta
 
 The script automatically:
 - Detects OS and architecture (Linux AMD64/ARM64)
+- Installs `traceroute` dependency (required for `traceroute` command)
 - Downloads the latest version
 - Installs to `/usr/local/bin`
 - Verifies installation
@@ -113,7 +114,12 @@ chmod +x /usr/local/bin/netmon
 
 ### 🔨 Build from Source
 
-**Prerequisites:** Go 1.25 or higher
+**Prerequisites:**
+- Go 1.25 or higher
+- `traceroute` command (for `traceroute` functionality)
+  - Linux: `sudo apt-get install traceroute` (Debian/Ubuntu) or `sudo yum install traceroute` (RHEL/CentOS)
+  - macOS: Usually pre-installed, or `brew install traceroute`
+  - Windows: Uses built-in `tracert` command
 
 ```bash
 # Clone the repository

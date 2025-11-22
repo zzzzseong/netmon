@@ -49,6 +49,68 @@ detect_platform() {
     echo -e "${BLUE}📦 Detected platform: ${PLATFORM}${NC}"
 }
 
+# Check and install traceroute dependency
+check_traceroute() {
+    if command -v traceroute &> /dev/null; then
+        echo -e "${GREEN}✅ traceroute is already installed${NC}"
+        return 0
+    fi
+    
+    echo -e "${YELLOW}⚠️  traceroute is not installed. Installing...${NC}"
+    
+    if [ "$OS" = "linux" ]; then
+        # Detect Linux package manager
+        if command -v apt-get &> /dev/null; then
+            # Debian/Ubuntu
+            if sudo apt-get update -qq && sudo apt-get install -y traceroute 2>/dev/null; then
+                echo -e "${GREEN}✅ traceroute installed successfully${NC}"
+                return 0
+            fi
+        elif command -v yum &> /dev/null; then
+            # RHEL/CentOS (older versions)
+            if sudo yum install -y traceroute 2>/dev/null; then
+                echo -e "${GREEN}✅ traceroute installed successfully${NC}"
+                return 0
+            fi
+        elif command -v dnf &> /dev/null; then
+            # Fedora/RHEL/CentOS (newer versions)
+            if sudo dnf install -y traceroute 2>/dev/null; then
+                echo -e "${GREEN}✅ traceroute installed successfully${NC}"
+                return 0
+            fi
+        elif command -v pacman &> /dev/null; then
+            # Arch Linux
+            if sudo pacman -S --noconfirm traceroute 2>/dev/null; then
+                echo -e "${GREEN}✅ traceroute installed successfully${NC}"
+                return 0
+            fi
+        fi
+        
+        # If we get here, installation failed or package manager not detected
+        echo -e "${YELLOW}⚠️  Could not automatically install traceroute.${NC}"
+        echo -e "${YELLOW}   Please install it manually using one of the following:${NC}"
+        echo -e "${YELLOW}   • Debian/Ubuntu: sudo apt-get install traceroute${NC}"
+        echo -e "${YELLOW}   • RHEL/CentOS: sudo yum install traceroute${NC}"
+        echo -e "${YELLOW}   • Fedora: sudo dnf install traceroute${NC}"
+        echo -e "${YELLOW}   • Arch: sudo pacman -S traceroute${NC}"
+        echo -e "${YELLOW}   Note: netmon will continue to install, but 'traceroute' command will not work until traceroute is installed.${NC}"
+        return 0  # Don't fail installation, just warn
+    elif [ "$OS" = "darwin" ]; then
+        # macOS - usually pre-installed, but check anyway
+        if command -v brew &> /dev/null; then
+            if brew install traceroute 2>/dev/null; then
+                echo -e "${GREEN}✅ traceroute installed successfully${NC}"
+                return 0
+            fi
+        fi
+        echo -e "${YELLOW}⚠️  traceroute not found. macOS usually includes it by default.${NC}"
+        echo -e "${YELLOW}   If you encounter issues, install via Homebrew: brew install traceroute${NC}"
+        return 0  # Don't fail installation, just warn
+    fi
+    
+    return 0  # Always return success to not block installation
+}
+
 # Get latest version
 get_latest_version() {
     if [ "$VERSION" = "latest" ]; then
@@ -127,6 +189,7 @@ main() {
     echo -e "${NC}"
     
     detect_platform
+    check_traceroute
     get_latest_version
     download_binary
     verify_installation

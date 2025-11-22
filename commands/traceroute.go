@@ -158,13 +158,28 @@ func formatRTTSimple(rtt string) string {
 // executeTracerouteStreaming은 traceroute를 실시간으로 실행하고 출력합니다
 func executeTracerouteStreaming(target string) error {
 	var cmd *exec.Cmd
+	var cmdName string
 
 	if runtime.GOOS == "windows" {
 		// Windows: tracert
+		cmdName = "tracert"
 		cmd = exec.Command("tracert", "-d", "-w", "3000", target)
 	} else {
 		// Unix-like: traceroute
+		cmdName = "traceroute"
 		cmd = exec.Command("traceroute", "-n", "-w", "3", "-q", "3", target)
+	}
+
+	// 명령어가 PATH에 있는지 확인
+	if _, err := exec.LookPath(cmdName); err != nil {
+		errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: %s command not found", cmdName))
+		fmt.Fprintf(os.Stderr, "%s\n\n", errorMsg)
+		
+		// OS별 설치 안내 메시지 출력
+		installMsg := getTracerouteInstallMessage()
+		fmt.Fprintf(os.Stderr, "%s\n", installMsg)
+		
+		return fmt.Errorf("%s command not found in PATH", cmdName)
 	}
 
 	// stdout 파이프 생성
@@ -256,6 +271,34 @@ func parseUnixTracerouteStreaming(scanner *bufio.Scanner) {
 		// 실시간으로 hop 출력
 		printHopLine(hop)
 	}
+}
+
+// getTracerouteInstallMessage는 OS별 traceroute 설치 안내 메시지를 반환합니다
+func getTracerouteInstallMessage() string {
+	var msg string
+	
+	switch runtime.GOOS {
+	case "linux":
+		msg = `Please install traceroute using one of the following commands:
+  • Debian/Ubuntu: sudo apt-get install traceroute
+  • RHEL/CentOS:   sudo yum install traceroute
+  • Fedora:        sudo dnf install traceroute
+  • Arch Linux:    sudo pacman -S traceroute`
+	case "darwin":
+		msg = `Please install traceroute using Homebrew:
+  brew install traceroute
+  
+Note: macOS usually includes traceroute by default. If you see this message,
+traceroute may have been removed or is not in your PATH.`
+	case "windows":
+		msg = `Windows includes tracert by default. If you see this message,
+please check your system PATH configuration.`
+	default:
+		msg = fmt.Sprintf(`Please install traceroute for your operating system (%s).
+Check your system's package manager for installation instructions.`, runtime.GOOS)
+	}
+	
+	return style.DescStyle.Render(msg)
 }
 
 // parseWindowsTracertStreaming은 Windows tracert를 실시간으로 파싱합니다
