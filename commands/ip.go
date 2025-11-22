@@ -33,15 +33,15 @@ func (c *IPCommand) Description() string {
 
 // Usage는 명령어 사용법을 반환합니다
 func (c *IPCommand) Usage() string {
-	return "ip [-a|--all]"
+	return "ip [-a]"
 }
 
 // Execute는 명령어를 실행합니다
 func (c *IPCommand) Execute(args []string) error {
-	// -a 또는 --all 플래그 확인
+	// -a 플래그 확인
 	showAll := false
 	for _, arg := range args {
-		if arg == "-a" || arg == "--all" {
+		if arg == "-a" {
 			showAll = true
 			break
 		}

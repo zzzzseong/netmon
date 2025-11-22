@@ -32,7 +32,7 @@ func (c *RouteCommand) Description() string {
 
 // Usage는 명령어 사용법을 반환합니다
 func (c *RouteCommand) Usage() string {
-	return "route [--format table|linux]"
+	return "route"
 }
 
 // RouteEntry는 provider.RouteEntry의 별칭입니다 (하위 호환성 유지)
@@ -40,15 +40,6 @@ type RouteEntry = provider.RouteEntry
 
 // Execute는 명령어를 실행합니다
 func (c *RouteCommand) Execute(args []string) error {
-	// 플래그 파싱
-	format := "table" // 기본값
-	for i := 0; i < len(args); i++ {
-		if args[i] == "--format" && i+1 < len(args) {
-			format = args[i+1]
-			i++
-		}
-	}
-
 	// RouteProvider를 통해 라우팅 테이블 가져오기
 	routeProvider := provider.NewRouteProvider()
 	routes, err := routeProvider.GetRoutes()
@@ -61,19 +52,9 @@ func (c *RouteCommand) Execute(args []string) error {
 	// 불필요한 라우트 필터링 (단일 호스트, multicast, link-local 등 제외)
 	routes = provider.FilterRoutes(routes)
 
-	// 포맷에 따라 출력
-	switch format {
-	case "linux":
-		// Linux ip route 스타일 출력
-		output := provider.FormatLinuxStyleRoutes(routes)
-		fmt.Println(output)
-	case "table":
-		fallthrough
-	default:
-		// 테이블 형식 출력
-		table := formatRouteTable(routes)
-		fmt.Println(table)
-	}
+	// 테이블 형식 출력
+	table := formatRouteTable(routes)
+	fmt.Println(table)
 
 	return nil
 }
