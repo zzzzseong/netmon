@@ -11,7 +11,7 @@ import (
 // Version 정보
 const (
 	Version   = "1.1.4"
-	BuildDate = "2025-01-22"
+	BuildDate = "2025-11-22"
 )
 
 func main() {
@@ -48,8 +48,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	// help 별칭 처리 (--help, -h)
-	if commandName == "--help" || commandName == "-h" {
+	// help 별칭 처리 ( -h, --help)
+	if commandName == "-h" || commandName == "--help" {
 		commands.PrintUsage(registry)
 		os.Exit(0)
 	}

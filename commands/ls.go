@@ -34,11 +34,20 @@ func (c *ListCommand) Description() string {
 
 // Usage는 명령어 사용법을 반환합니다
 func (c *ListCommand) Usage() string {
-	return "ls"
+	return "ls [-a]"
 }
 
 // Execute는 명령어를 실행합니다
 func (c *ListCommand) Execute(args []string) error {
+	// -a 옵션 파싱
+	includeUDP := false
+	for _, arg := range args {
+		if arg == "-a" {
+			includeUDP = true
+			break
+		}
+	}
+
 	// 모든 네트워크 연결 가져오기
 	connections, err := net.Connections("inet")
 	if err != nil {
@@ -47,8 +56,8 @@ func (c *ListCommand) Execute(args []string) error {
 		os.Exit(1)
 	}
 
-	// LISTEN 상태인 연결만 필터링
-	listeningConns := utils.FilterListeningConnections(connections)
+	// LISTEN 상태인 연결만 필터링 (-a 옵션이 있을 때만 UDP 포함)
+	listeningConns := utils.FilterListeningConnections(connections, includeUDP)
 
 	// 포맷터를 사용하여 테이블 생성
 	table := c.formatter.Format(listeningConns)

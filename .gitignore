@@ -21,6 +21,7 @@ go.work
 netmon
 /netmon
 /netmon-*
+dist
 
 # IDE
 .idea/

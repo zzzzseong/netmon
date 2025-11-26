@@ -41,11 +41,16 @@ func IsUDP(connType uint32) bool {
 }
 
 // FilterListeningConnections LISTEN 상태인 연결만 필터링
-func FilterListeningConnections(connections []net.ConnectionStat) map[string]net.ConnectionStat {
+// includeUDP가 true일 때만 UDP 연결을 포함합니다
+func FilterListeningConnections(connections []net.ConnectionStat, includeUDP bool) map[string]net.ConnectionStat {
 	listeningConns := make(map[string]net.ConnectionStat)
 	for _, conn := range connections {
-		// TCP는 LISTEN 상태만, UDP는 포트가 열려있으면 모두 포함
-		if conn.Status == "LISTEN" || (IsUDP(conn.Type) && conn.Laddr.Port > 0) {
+		// TCP는 LISTEN 상태만 포함
+		if conn.Status == "LISTEN" {
+			key := fmt.Sprintf("%d:%d", conn.Type, conn.Laddr.Port)
+			listeningConns[key] = conn
+		} else if includeUDP && IsUDP(conn.Type) && conn.Laddr.Port > 0 {
+			// UDP는 includeUDP가 true일 때만 포함
 			key := fmt.Sprintf("%d:%d", conn.Type, conn.Laddr.Port)
 			listeningConns[key] = conn
 		}
