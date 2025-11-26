@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.4-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Version](https://img.shields.io/badge/version-1.1.5-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/zzzzseong/netmon)
 
 *A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.*
@@ -67,7 +67,7 @@ The easiest way to install on Linux:
 curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash
 
 # Install specific version
-curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.1.4
+curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.1.5
 ```
 
 The script automatically:
@@ -142,6 +142,7 @@ sudo mv netmon /usr/local/bin/
 Display all active listening ports with detailed process information:
 
 ```bash
+# Show TCP LISTEN connections only (default)
 netmon ls
 ```
 
@@ -152,7 +153,22 @@ netmon ls
 ├────────────┼─────────────────────┼────────────┼───────────┼───────────────────────────┼─────────────────┼───────────┼──────────┤
 │ TCP        │ 127.0.0.1:8080      │ LISTEN     │ 12345     │ node                      │ jisung          │ 15.2%     │ 2.1%     │
 │ TCP        │ *:3000              │ LISTEN     │ 23456     │ nginx                     │ jisung          │ 2.5%      │ 0.8%     │
-│ UDP        │ 127.0.0.1:53        │ LISTEN     │ 567       │ systemd-resolved          │ root            │ 0.1%      │ 0.3%     │
+╰────────────┴─────────────────────┴────────────┴───────────┴───────────────────────────┴─────────────────┴───────────┴──────────╯
+```
+
+```bash
+# Include UDP connections with -a flag
+netmon ls -a
+```
+
+**Output:**
+```
+╭────────────┬─────────────────────┬────────────┬───────────┬───────────────────────────┬─────────────────┬───────────┬──────────╮
+│  PROTOCOL  │    LOCAL ADDRESS    │   STATUS   │   PID     │       PROCESS NAME        │    USERNAME     │  CPU %    │  MEM %   │
+├────────────┼─────────────────────┼────────────┼───────────┼───────────────────────────┼─────────────────┼───────────┼──────────┤
+│ TCP        │ 127.0.0.1:8080      │ LISTEN     │ 12345     │ node                      │ jisung          │ 15.2%     │ 2.1%     │
+│ TCP        │ *:3000              │ LISTEN     │ 23456     │ nginx                     │ jisung          │ 2.5%      │ 0.8%     │
+│ UDP        │ 127.0.0.1:53         │ NONE       │ 567       │ systemd-resolved          │ root            │ 0.1%      │ 0.3%     │
 ╰────────────┴─────────────────────┴────────────┴───────────┴───────────────────────────┴─────────────────┴───────────┴──────────╯
 ```
 
@@ -302,7 +318,7 @@ The command will:
 
 | Command | Description | Usage | Flags |
 |---------|-------------|-------|-------|
-| `ls` | List all active ports with process metrics | `netmon ls` | - |
+| `ls` | List all active ports with process metrics | `netmon ls` | `-a` (include UDP) |
 | `ip` | Show network interfaces | `netmon ip` | `-a` (show IPv6) |
 | `route` | Display routing table with smart filtering | `netmon route` | - |
 | `find` | Find process using a port | `netmon find <port>` | - |
@@ -324,12 +340,18 @@ The command will:
 
 ---
 
-## 🆕 What's New in v1.1.4
+## 🆕 What's New in v1.1.5
 
+- ✨ **UDP connection visibility** - Added `-a` flag to `ls` command to display UDP connections
+- 🔧 **Improved filtering** - Default behavior shows only TCP LISTEN connections for cleaner output
+- 📋 **Enhanced port listing** - Optional UDP display with `netmon ls -a` command
+
+### Previous Versions
+
+**v1.1.4:**
 - 🐧 **Linux installation script** - Easy one-command installation for Linux users
 - 📁 **Improved project structure** - Installation scripts organized in `scripts/` directory
 - 📝 **README optimization** - Cleaner documentation with removed duplicates
-
 
 > 📜 For detailed changelog, see [GitHub Releases](https://github.com/zzzzseong/netmon/releases)
 

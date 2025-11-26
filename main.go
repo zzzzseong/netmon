@@ -10,8 +10,8 @@ import (
 
 // Version 정보
 const (
-	Version   = "1.1.4"
-	BuildDate = "2025-11-22"
+	Version   = "1.1.5"
+	BuildDate = "2025-11-26"
 )
 
 func main() {
