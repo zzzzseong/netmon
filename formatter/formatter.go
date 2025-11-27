@@ -50,6 +50,9 @@ func (f *PortTableFormatter) Format(connections map[string]net.ConnectionStat) s
 	// 사이즈가 확정된 슬라이스로 메모리 할당 최적화
 	rows := make([][]string, 0, len(connections))
 	
+	// 프로세스 정보 캐싱을 위한 맵
+	processCache := make(map[int32]utils.ProcessInfo)
+
 	for _, conn := range connections {
 		// 프로토콜 및 주소
 		protocol := utils.ConnectionTypeToString(conn.Type)
@@ -58,9 +61,16 @@ func (f *PortTableFormatter) Format(connections map[string]net.ConnectionStat) s
 		// 상태 스타일링
 		statusStr := getStatusStyled(conn.Status)
 
-		// 프로세스 정보 가져오기
+		// 프로세스 정보 가져오기 (캐싱 적용)
 		pid := int(conn.Pid)
-		processInfo := utils.GetProcessInfo(int32(pid))
+		var processInfo utils.ProcessInfo
+		
+		if info, ok := processCache[int32(pid)]; ok {
+			processInfo = info
+		} else {
+			processInfo = utils.GetProcessInfo(int32(pid))
+			processCache[int32(pid)] = processInfo
+		}
 
 		// PID 스타일링
 		pidStr := fmt.Sprintf("%d", pid)

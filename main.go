@@ -58,8 +58,12 @@ func main() {
 	err := registry.Execute(commandName, args)
 	if err != nil {
 		errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: %v", err))
-		fmt.Fprintf(os.Stderr, "%s\n\n", errorMsg)
-		commands.PrintUsage(registry)
+		fmt.Fprintf(os.Stderr, "%s\n", errorMsg)
+		
+        
+        // Let's check if I can add "strings" to imports.
+        // I will use multi_replace to add import and modify main.
+        
 		os.Exit(1)
 	}
 }

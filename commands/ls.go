@@ -2,11 +2,9 @@ package commands
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/shirou/gopsutil/v3/net"
 	"netmon/formatter"
-	"netmon/style"
 	"netmon/utils"
 )
 
@@ -51,9 +49,7 @@ func (c *ListCommand) Execute(args []string) error {
 	// 모든 네트워크 연결 가져오기
 	connections, err := net.Connections("inet")
 	if err != nil {
-		errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: Failed to get network connection information: %v", err))
-		fmt.Fprintf(os.Stderr, "%s\n", errorMsg)
-		os.Exit(1)
+		return fmt.Errorf("failed to get network connection information: %w", err)
 	}
 
 	// LISTEN 상태인 연결만 필터링 (-a 옵션이 있을 때만 UDP 포함)
