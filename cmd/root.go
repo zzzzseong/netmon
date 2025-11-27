@@ -11,14 +11,19 @@ var rootCmd = &cobra.Command{
 	Use:   "netmon",
 	Short: "A modern, beautiful CLI tool for network monitoring and process management",
 	Long: `A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	Run: func(cmd *cobra.Command, args []string) {
+		// No arguments provided, show help
+		printCustomHelp(cmd, args)
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	// Set custom help and usage functions
+	rootCmd.SetHelpFunc(printCustomHelp)
+	rootCmd.SetUsageFunc(printCustomUsage)
+	
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
@@ -26,13 +31,7 @@ func Execute() {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
-
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.netmon.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
