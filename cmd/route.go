@@ -1,66 +1,47 @@
-package commands
+package cmd
 
 import (
 	"fmt"
-	"os"
 	"sort"
 	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
+	"github.com/spf13/cobra"
 	"netmon/provider"
 	"netmon/style"
 )
 
-// RouteCommand는 라우팅 테이블 정보를 표시하는 명령어입니다
-type RouteCommand struct{}
+// routeCmd represents the route command
+var routeCmd = &cobra.Command{
+	Use:   "route",
+	Short: "Show routing table information",
+	Long:  `Display system routing information with smart filtering.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		// RouteProvider를 통해 라우팅 테이블 가져오기
+		routeProvider := provider.NewRouteProvider()
+		routes, err := routeProvider.GetRoutes()
+		if err != nil {
+			return fmt.Errorf("failed to get routing table information: %w", err)
+		}
 
-// NewRouteCommand는 새로운 RouteCommand를 생성합니다
-func NewRouteCommand() *RouteCommand {
-	return &RouteCommand{}
+		// 불필요한 라우트 필터링 (단일 호스트, multicast, link-local 등 제외)
+		routes = provider.FilterRoutes(routes)
+
+		// 테이블 형식 출력
+		table := formatRouteTable(routes)
+		fmt.Println(table)
+
+		return nil
+	},
 }
 
-// Name은 명령어 이름을 반환합니다
-func (c *RouteCommand) Name() string {
-	return "route"
-}
-
-// Description은 명령어 설명을 반환합니다
-func (c *RouteCommand) Description() string {
-	return "Show routing table information"
-}
-
-// Usage는 명령어 사용법을 반환합니다
-func (c *RouteCommand) Usage() string {
-	return "route"
-}
-
-// RouteEntry는 provider.RouteEntry의 별칭입니다 (하위 호환성 유지)
-type RouteEntry = provider.RouteEntry
-
-// Execute는 명령어를 실행합니다
-func (c *RouteCommand) Execute(args []string) error {
-	// RouteProvider를 통해 라우팅 테이블 가져오기
-	routeProvider := provider.NewRouteProvider()
-	routes, err := routeProvider.GetRoutes()
-	if err != nil {
-		errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: Failed to get routing table information: %v", err))
-		fmt.Fprintf(os.Stderr, "%s\n", errorMsg)
-		os.Exit(1)
-	}
-
-	// 불필요한 라우트 필터링 (단일 호스트, multicast, link-local 등 제외)
-	routes = provider.FilterRoutes(routes)
-
-	// 테이블 형식 출력
-	table := formatRouteTable(routes)
-	fmt.Println(table)
-
-	return nil
+func init() {
+	rootCmd.AddCommand(routeCmd)
 }
 
 // formatRouteTable은 라우팅 테이블 정보를 테이블 형식으로 포맷팅합니다
-func formatRouteTable(routes []RouteEntry) string {
+func formatRouteTable(routes []provider.RouteEntry) string {
 	// 메모리 사전 할당 최적화
 	rows := make([][]string, 0, len(routes))
 

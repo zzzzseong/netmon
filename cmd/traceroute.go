@@ -1,9 +1,8 @@
-package commands
+package cmd
 
 import (
 	"bufio"
 	"fmt"
-	"os"
 	"os/exec"
 	"regexp"
 	"runtime"
@@ -11,30 +10,47 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/spf13/cobra"
 	"netmon/style"
 )
 
-// TraceCommand는 traceroute 정보를 표시하는 명령어입니다
-type TraceCommand struct{}
+// tracerouteCmd represents the traceroute command
+var tracerouteCmd = &cobra.Command{
+	Use:   "traceroute <host>",
+	Short: "Trace route to network host",
+	Long:  `Trace the network path to a destination with animated loading.`,
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		target := args[0]
 
-// NewTraceCommand는 새로운 TraceCommand를 생성합니다
-func NewTraceCommand() *TraceCommand {
-	return &TraceCommand{}
+		// 헤더 출력
+		header := fmt.Sprintf("Tracing route to %s", target)
+		headerStyle := lipgloss.NewStyle().
+			Foreground(style.PrimaryColor).
+			Bold(true)
+		fmt.Println(headerStyle.Render(header))
+		fmt.Println()
+
+		// 테이블 헤더 출력
+		printTableHeader()
+
+		// 실시간으로 traceroute 실행 및 출력
+		err := executeTracerouteStreaming(target)
+		if err != nil {
+			// 에러 메시지는 executeTracerouteStreaming 내부에서 출력하지 않고 여기서 반환
+			// 하지만 기존 로직상 에러 메시지 스타일링이 있으므로 유지하거나 리팩토링
+			// 여기서는 에러를 반환하여 Cobra가 출력하게 하거나, 직접 출력하고 nil 반환
+			// 기존 스타일을 유지하기 위해 직접 출력하고 에러 반환
+			return err
+		}
+
+		fmt.Println()
+		return nil
+	},
 }
 
-// Name은 명령어 이름을 반환합니다
-func (c *TraceCommand) Name() string {
-	return "traceroute"
-}
-
-// Description은 명령어 설명을 반환합니다
-func (c *TraceCommand) Description() string {
-	return "Trace route to network host"
-}
-
-// Usage는 명령어 사용법을 반환합니다
-func (c *TraceCommand) Usage() string {
-	return "traceroute <host>"
+func init() {
+	rootCmd.AddCommand(tracerouteCmd)
 }
 
 // TraceHop은 traceroute의 각 홉 정보를 담습니다
@@ -46,40 +62,6 @@ type TraceHop struct {
 	RTT2    string
 	RTT3    string
 	Status  string // "success", "timeout", "error"
-}
-
-// Execute는 명령어를 실행합니다
-func (c *TraceCommand) Execute(args []string) error {
-	if len(args) < 1 {
-		errorMsg := style.ErrorStyle.Render("Error: Host is required")
-		fmt.Fprintf(os.Stderr, "%s\n", errorMsg)
-		fmt.Println(style.DescStyle.Render("Usage: netmon traceroute <host>"))
-		return fmt.Errorf("host is required")
-	}
-
-	target := args[0]
-
-	// 헤더 출력
-	header := fmt.Sprintf("Tracing route to %s", target)
-	headerStyle := lipgloss.NewStyle().
-		Foreground(style.PrimaryColor).
-		Bold(true)
-	fmt.Println(headerStyle.Render(header))
-	fmt.Println()
-
-	// 테이블 헤더 출력
-	printTableHeader()
-
-	// 실시간으로 traceroute 실행 및 출력
-	err := executeTracerouteStreaming(target)
-	if err != nil {
-		errorMsg := style.ErrorStyle.Render(fmt.Sprintf("\nError: %v", err))
-		fmt.Fprintf(os.Stderr, "%s\n", errorMsg)
-		return err
-	}
-
-	fmt.Println()
-	return nil
 }
 
 // printTableHeader는 테이블 헤더를 출력합니다
@@ -172,14 +154,9 @@ func executeTracerouteStreaming(target string) error {
 
 	// 명령어가 PATH에 있는지 확인
 	if _, err := exec.LookPath(cmdName); err != nil {
-		errorMsg := style.ErrorStyle.Render(fmt.Sprintf("Error: %s command not found", cmdName))
-		fmt.Fprintf(os.Stderr, "%s\n\n", errorMsg)
-		
 		// OS별 설치 안내 메시지 출력
 		installMsg := getTracerouteInstallMessage()
-		fmt.Fprintf(os.Stderr, "%s\n", installMsg)
-		
-		return fmt.Errorf("%s command not found in PATH", cmdName)
+		return fmt.Errorf("%s command not found in PATH\n%s", cmdName, installMsg)
 	}
 
 	// stdout 파이프 생성
@@ -365,5 +342,3 @@ func parseWindowsTracertStreaming(scanner *bufio.Scanner) {
 		printHopLine(hop)
 	}
 }
-
-
