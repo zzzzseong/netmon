@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.5-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Version](https://img.shields.io/badge/version-1.2.0-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/zzzzseong/netmon)
 
 *A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.*
@@ -46,6 +46,7 @@
 - **Beautiful UI** - Modern terminal interface with color-coded output
 - **Center-aligned Headers** - Clean, organized table layouts
 - **Optimized Columns** - Compact display for better terminal compatibility
+- **Shell Completion** - Tab completion support for Bash, Zsh, and Fish
 - **Fast & Lightweight** - Built with Go for optimal performance
 
 ---
@@ -67,7 +68,7 @@ The easiest way to install on Linux:
 curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash
 
 # Install specific version
-curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.1.5
+curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.2.0
 ```
 
 The script automatically:
@@ -75,6 +76,7 @@ The script automatically:
 - Installs `traceroute` dependency (required for `traceroute` command)
 - Downloads the latest version
 - Installs to `/usr/local/bin`
+- Installs shell completions (Bash, Zsh, Fish)
 - Verifies installation
 
 **After installation, you can immediately use netmon:**
@@ -340,20 +342,42 @@ The command will:
 
 ---
 
-## 🆕 What's New in v1.1.5
+## 🆕 What's New in v1.2.0
 
-- ✨ **UDP connection visibility** - Added `-a` flag to `ls` command to display UDP connections
-- 🔧 **Improved filtering** - Default behavior shows only TCP LISTEN connections for cleaner output
-- 📋 **Enhanced port listing** - Optional UDP display with `netmon ls -a` command
+- 🚀 **Cobra CLI Framework** - Migrated to industry-standard Cobra framework for better maintainability and extensibility
+- 🎯 **Shell Completion** - Added tab completion support for Bash, Zsh, and Fish shells
+- 🧪 **Testing Infrastructure** - Added comprehensive test coverage for formatter and utils
+- ⚡ **Performance Improvements** - Enhanced error handling and code organization
 
-### Previous Versions
+### Shell Completion
 
-**v1.1.4:**
-- 🐧 **Linux installation script** - Easy one-command installation for Linux users
-- 📁 **Improved project structure** - Installation scripts organized in `scripts/` directory
-- 📝 **README optimization** - Cleaner documentation with removed duplicates
+Shell completion is automatically installed when you use the install script. After installation, restart your shell to enable tab completion.
 
-> 📜 For detailed changelog, see [GitHub Releases](https://github.com/zzzzseong/netmon/releases)
+**Automatic Installation:**
+```bash
+# Install netmon (completions are automatically installed)
+curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash
+
+# Restart your shell or run:
+source ~/.bashrc  # For Bash
+source ~/.zshrc   # For Zsh
+```
+
+**Manual Installation (if needed):**
+If you need to manually install completions, you can use Cobra's built-in completion command:
+
+```bash
+# Bash
+netmon completion bash | sudo tee /etc/bash_completion.d/netmon
+
+# Zsh
+netmon completion zsh | sudo tee /usr/share/zsh/site-functions/_netmon
+
+# Fish
+netmon completion fish | sudo tee /usr/share/fish/vendor_completions.d/netmon.fish
+```
+
+> 📜 For detailed changelog and previous versions, see [GitHub Releases](https://github.com/zzzzseong/netmon/releases)
 
 ---
 
