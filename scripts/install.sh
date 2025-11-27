@@ -157,6 +157,58 @@ download_binary() {
     echo -e "${GREEN}✅ Installation complete!${NC}"
 }
 
+# Install shell completions
+install_completions() {
+    echo -e "${BLUE}🔧 Installing shell completions...${NC}"
+    
+    # Check if netmon is available
+    if ! command -v netmon &> /dev/null; then
+        echo -e "${YELLOW}⚠️  Skipping completions: netmon not found in PATH${NC}"
+        return 0
+    fi
+    
+    # Bash completion
+    if [ -d "/etc/bash_completion.d" ]; then
+        if sudo netmon completion bash > /tmp/netmon-completion.bash 2>/dev/null; then
+            sudo mv /tmp/netmon-completion.bash /etc/bash_completion.d/netmon
+            echo -e "${GREEN}  ✅ Bash completion installed${NC}"
+        fi
+    elif [ -d "/usr/local/etc/bash_completion.d" ]; then
+        if sudo netmon completion bash > /tmp/netmon-completion.bash 2>/dev/null; then
+            sudo mv /tmp/netmon-completion.bash /usr/local/etc/bash_completion.d/netmon
+            echo -e "${GREEN}  ✅ Bash completion installed${NC}"
+        fi
+    fi
+    
+    # Zsh completion
+    if [ -d "/usr/share/zsh/site-functions" ]; then
+        if sudo netmon completion zsh > /tmp/_netmon 2>/dev/null; then
+            sudo mv /tmp/_netmon /usr/share/zsh/site-functions/_netmon
+            echo -e "${GREEN}  ✅ Zsh completion installed${NC}"
+        fi
+    elif [ -d "/usr/local/share/zsh/site-functions" ]; then
+        if sudo netmon completion zsh > /tmp/_netmon 2>/dev/null; then
+            sudo mv /tmp/_netmon /usr/local/share/zsh/site-functions/_netmon
+            echo -e "${GREEN}  ✅ Zsh completion installed${NC}"
+        fi
+    fi
+    
+    # Fish completion
+    if [ -d "/usr/share/fish/vendor_completions.d" ]; then
+        if sudo netmon completion fish > /tmp/netmon.fish 2>/dev/null; then
+            sudo mv /tmp/netmon.fish /usr/share/fish/vendor_completions.d/netmon.fish
+            echo -e "${GREEN}  ✅ Fish completion installed${NC}"
+        fi
+    elif [ -d "/usr/local/share/fish/vendor_completions.d" ]; then
+        if sudo netmon completion fish > /tmp/netmon.fish 2>/dev/null; then
+            sudo mv /tmp/netmon.fish /usr/local/share/fish/vendor_completions.d/netmon.fish
+            echo -e "${GREEN}  ✅ Fish completion installed${NC}"
+        fi
+    fi
+    
+    echo -e "${BLUE}💡 Shell completions installed. Restart your shell or run 'source ~/.bashrc' (or ~/.zshrc) to enable.${NC}"
+}
+
 # Verify installation
 verify_installation() {
     # Refresh command hash to ensure the new binary is found
@@ -192,6 +244,7 @@ main() {
     check_traceroute
     get_latest_version
     download_binary
+    install_completions
     verify_installation
 }
 
