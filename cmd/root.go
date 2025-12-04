@@ -35,6 +35,7 @@ func init() {
 	// will be global for your application.
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.netmon.yaml)")
 	
-	// Disable completion command completely (official Cobra way)
-	rootCmd.CompletionOptions.DisableDefaultCmd = true
+	// Hide completion command from help (but keep it functional for Homebrew/install scripts)
+	// This allows Homebrew to generate completions while hiding it from users
+	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 }

@@ -206,7 +206,8 @@ install_completions() {
         fi
     fi
     
-    echo -e "${BLUE}💡 Shell completions installed. Restart your shell or run 'source ~/.bashrc' (or ~/.zshrc) to enable.${NC}"
+    echo -e "${BLUE}💡 Shell completions installed to system directories.${NC}"
+    echo -e "${BLUE}   Restart your shell to enable tab completion.${NC}"
 }
 
 # Verify installation

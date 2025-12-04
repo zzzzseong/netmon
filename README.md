@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.2.0-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Version](https://img.shields.io/badge/version-1.2.1-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/zzzzseong/netmon)
 
 *A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.*
@@ -68,7 +68,7 @@ The easiest way to install on Linux:
 curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash
 
 # Install specific version
-curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.2.0
+curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.2.1
 ```
 
 The script automatically:
@@ -342,39 +342,45 @@ The command will:
 
 ---
 
-## 🆕 What's New in v1.2.0
+## 🆕 What's New in v1.2.1
 
-- 🚀 **Cobra CLI Framework** - Migrated to industry-standard Cobra framework for better maintainability and extensibility
-- 🎯 **Shell Completion** - Added tab completion support for Bash, Zsh, and Fish shells
-- 🧪 **Testing Infrastructure** - Added comprehensive test coverage for formatter and utils
-- ⚡ **Performance Improvements** - Enhanced error handling and code organization
+- 🎨 **Custom Help Output Restored** - Beautiful styled help output restored and extracted to separate file for better code organization
+- 🧹 **Completion Command Cleanup** - Removed completion command from help output using Cobra's official API
+- 📁 **Code Organization** - Help rendering logic moved to `cmd/help.go` for better maintainability
 
 ### Shell Completion
 
-Shell completion is automatically installed when you use the install script. After installation, restart your shell to enable tab completion.
+Shell completion is automatically installed when you use the install script or Homebrew.
 
-**Automatic Installation:**
+**Linux Installation (via install script):**
 ```bash
-# Install netmon (completions are automatically installed)
+# Install netmon (completions are automatically installed to system directories)
 curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash
 
-# Restart your shell or run:
-source ~/.bashrc  # For Bash
-source ~/.zshrc   # For Zsh
+# Completions are installed to system directories:
+# - Bash: /etc/bash_completion.d or /usr/local/etc/bash_completion.d
+# - Zsh: /usr/share/zsh/site-functions or /usr/local/share/zsh/site-functions
+# 
+# Most Linux distributions work without additional configuration.
+# Just restart your shell. If completion doesn't work:
+# - Bash: Ensure bash-completion package is installed
+# - Zsh: Ensure compinit is enabled in your ~/.zshrc
 ```
 
-**Manual Installation (if needed):**
-If you need to manually install completions, you can use Cobra's built-in completion command:
-
+**macOS Installation (via Homebrew):**
 ```bash
-# Bash
-netmon completion bash | sudo tee /etc/bash_completion.d/netmon
+# Homebrew automatically installs completions
+brew install zzzzseong/netmon/netmon
 
-# Zsh
-netmon completion zsh | sudo tee /usr/share/zsh/site-functions/_netmon
+# Add to ~/.zshrc (shown in installation caveats):
+if type brew &>/dev/null; then
+  FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
+  autoload -Uz compinit
+  compinit
+fi
 
-# Fish
-netmon completion fish | sudo tee /usr/share/fish/vendor_completions.d/netmon.fish
+# Then restart your shell or run:
+source ~/.zshrc
 ```
 
 > 📜 For detailed changelog and previous versions, see [GitHub Releases](https://github.com/zzzzseong/netmon/releases)
