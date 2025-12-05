@@ -23,6 +23,7 @@ type ProcessInfo struct {
 	Username   string // Username running the process
 	CPUPercent string // CPU usage percentage as a formatted string
 	MemPercent string // Memory usage percentage as a formatted string
+	Cmdline    string // Full command line (like ps -ef)
 }
 
 // ConnectionTypeToString converts a connection type to its string representation.
@@ -107,6 +108,19 @@ func GetProcessInfo(pid int32) ProcessInfo {
 	mem, memErr := proc.MemoryPercent()
 	if memErr == nil {
 		info.MemPercent = fmt.Sprintf("%.1f%%", mem)
+	}
+
+	// 명령어 라인 전체 가져오기 (ps -ef처럼)
+	cmdline, cmdlineErr := proc.Cmdline()
+	if cmdlineErr == nil && cmdline != "" {
+		// 너무 긴 명령어 라인은 잘라내기 (터미널 출력 방지)
+		const maxCmdlineLength = 500
+		if len(cmdline) > maxCmdlineLength {
+			cmdline = cmdline[:maxCmdlineLength] + "..."
+		}
+		info.Cmdline = cmdline
+	} else {
+		info.Cmdline = "N/A"
 	}
 
 	return info

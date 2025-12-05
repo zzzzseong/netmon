@@ -252,10 +252,10 @@ netmon traceroute google.com
 
 ### 🔍 Find Process by Port
 
-Find which process is using a specific port:
+Find which process is using a specific port or PID:
 
 ```bash
-netmon find <port>
+netmon find <pid|port>
 ```
 
 **Example:**
@@ -265,18 +265,22 @@ netmon find 8080
 
 **Output:**
 ```
-⚙️  Process Information
-╭─────────────────────────────────────╮
-│ PID:        12345                   │
-│ Name:       node                    │
-│ Status:     [S]                     │
-│                                     │
-│ Active Ports:                       │
-│   • 127.0.0.1:8080 (TCP)           │
-╰─────────────────────────────────────╯
+╭──────────────────────────────────────────────────╮
+│                                                  │
+│  🔍 Found by Port: 8080                          │
+│                                                  │
+│  PID:        12345                               │
+│  Name:       node                                │
+│  Status:     [sleep]                             │
+│                                                  │
+│  Active Ports:                                   │
+│      • 127.0.0.1:8080 (TCP)                      │
+│                                                  │
+│                                                  │
+╰──────────────────────────────────────────────────╯
 ```
 
-*This is equivalent to `lsof -i :8080` but with a more beautiful output format.*
+*Equivalent to `lsof -i :8080` but with beautiful formatting. Also accepts PID to show all ports used by a process.*
 
 ---
 
@@ -323,7 +327,7 @@ The command will:
 | `ls` | List all active ports with process metrics | `netmon ls` | `-a` (include UDP) |
 | `ip` | Show network interfaces | `netmon ip` | `-a` (show IPv6) |
 | `route` | Display routing table with smart filtering | `netmon route` | - |
-| `find` | Find process using a port | `netmon find <port>` | - |
+| `find` | Find process by PID or port | `netmon find <pid|port>` | - |
 | `shutdown` | Shutdown a process | `netmon shutdown <pid>` | - |
 | `traceroute` | Trace route to network host | `netmon traceroute <host>` | - |
 | `version` | Show version information | `netmon version` | - |

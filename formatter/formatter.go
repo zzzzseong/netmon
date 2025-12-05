@@ -105,11 +105,23 @@ func NewProcessInfoFormatter() *ProcessInfoFormatter {
 
 // Format formats process information including PID, name, status, and active ports.
 // Returns a formatted string with styled process information.
-func (f *ProcessInfoFormatter) Format(pid int, processName string, status []string, connections []net.ConnectionStat) string {
-	title := style.TitleStyle.Render("⚙️  Process Information")
+func (f *ProcessInfoFormatter) Format(header string, pid int, processName string, status []string, connections []net.ConnectionStat) string {
+	return f.FormatWithCmdline(header, pid, processName, status, connections, "")
+}
 
+// FormatWithCmdline formats process information including command line.
+func (f *ProcessInfoFormatter) FormatWithCmdline(header string, pid int, processName string, status []string, connections []net.ConnectionStat, cmdline string) string {
 	// strings.Builder로 효율적인 문자열 생성
 	var builder strings.Builder
+	
+	// 헤더 추가 (Found by ... 정보)
+	if header != "" {
+		headerStyle := lipgloss.NewStyle().
+			Foreground(style.SecondaryColor).
+			Bold(true)
+		builder.WriteString(headerStyle.Render("🔍 " + header))
+		builder.WriteString("\n\n")
+	}
 	
 	// 프로세스 기본 정보
 	builder.WriteString(style.LabelStyle.Render("PID:"))
@@ -123,6 +135,17 @@ func (f *ProcessInfoFormatter) Format(pid int, processName string, status []stri
 	builder.WriteString(style.LabelStyle.Render("Status:"))
 	builder.WriteString(style.ValueStyle.Render(fmt.Sprintf("%v", status)))
 	builder.WriteString("\n")
+
+	// 명령어 라인 추가 (ps -ef처럼)
+	if cmdline != "" && cmdline != "N/A" {
+		builder.WriteString("\n")
+		cmdlineStyle := lipgloss.NewStyle().Foreground(style.SubtleColor)
+		builder.WriteString(cmdlineStyle.Render("Command:"))
+		builder.WriteString("\n")
+		cmdlineValueStyle := lipgloss.NewStyle().Foreground(style.InfoColor).MarginLeft(2)
+		builder.WriteString(cmdlineValueStyle.Render(cmdline))
+		builder.WriteString("\n")
+	}
 
 	// 포트 정보 추가
 	if len(connections) > 0 {
@@ -147,6 +170,6 @@ func (f *ProcessInfoFormatter) Format(pid int, processName string, status []stri
 	}
 
 	infoBox := style.InfoBoxStyle.Render(builder.String())
-	return fmt.Sprintf("\n%s\n%s", title, infoBox)
+	return infoBox
 }
 

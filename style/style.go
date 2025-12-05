@@ -54,7 +54,8 @@ var InfoBoxStyle = lipgloss.NewStyle().
 	Border(lipgloss.RoundedBorder()).
 	BorderForeground(PrimaryColor).
 	Padding(1, 2).
-	Margin(1, 0)
+	Margin(1, 0).
+	Width(50) // 너비를 50으로 증가
 
 // 라벨 스타일
 var LabelStyle = lipgloss.NewStyle().

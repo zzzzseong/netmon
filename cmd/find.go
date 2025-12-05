@@ -5,70 +5,76 @@ import (
 	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/shirou/gopsutil/v3/net"
+	"github.com/shirou/gopsutil/v3/process"
 	"github.com/spf13/cobra"
 	"netmon/formatter"
 	"netmon/style"
 	"netmon/utils"
 )
 
-const (
-	// minPort is the minimum valid port number
-	minPort = 1
-	// maxPort is the maximum valid port number
-	maxPort = 65535
-)
-
 // newFindCmd creates and returns the find command.
-// It finds which process is using a specific port.
+// It finds processes by PID, port, or process name.
+// If input is a number, it searches by both PID and port.
+// If input is a string, it searches by process name.
 func newFindCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "find <port>",
-		Short: "Find process using a specific port",
-		Long:  `Find which process is using a specific port.`,
-		Args:  cobra.ExactArgs(1),
+		Use:   "find <pid|port>",
+		Short: "Find process by PID or port",
+		Long: `Find processes by PID or port number.
+Provide a number to search by both PID and port.`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			portStr := args[0]
-			port, err := strconv.Atoi(portStr)
+			input := args[0]
+
+			// 숫자인지 확인
+			_, err := strconv.Atoi(input)
 			if err != nil {
-				return fmt.Errorf("invalid port number: %s", portStr)
+				return fmt.Errorf("invalid input: %s (must be a number for PID or port)", input)
 			}
 
-			if port < minPort || port > maxPort {
-				return fmt.Errorf("port number must be between %d and %d", minPort, maxPort)
-			}
-
-			// 모든 네트워크 연결 가져오기
-			connections, err := net.Connections("inet")
+			// FindByInput으로 자동 검색 (숫자만 허용)
+			results, err := utils.FindByInput(input)
 			if err != nil {
-				return fmt.Errorf("failed to get network connection information: %w", err)
-			}
-
-			// LISTEN 상태이면서 특정 포트를 사용하는 연결만 필터링 (한 번의 순회로 처리)
-			foundConns := make(map[string]net.ConnectionStat)
-			for _, conn := range connections {
-				// LISTEN 상태 또는 UDP이면서 포트가 일치하는 경우
-				isListening := conn.Status == "LISTEN" || (utils.IsUDP(conn.Type) && conn.Laddr.Port > 0)
-				if isListening && conn.Laddr.Port == uint32(port) {
-					key := fmt.Sprintf("%d:%d", conn.Type, conn.Laddr.Port)
-					foundConns[key] = conn
-				}
-			}
-
-			// 결과가 없으면 메시지 출력
-			if len(foundConns) == 0 {
 				noResultMsg := lipgloss.NewStyle().
 					Foreground(style.WarningColor).
 					Bold(true).
-					Render(fmt.Sprintf("No process found using port %d", port))
+					Render(fmt.Sprintf("No process found: %s", input))
 				fmt.Println(noResultMsg)
 				return nil
 			}
 
-			// 포맷터를 사용하여 테이블 생성
-			fmtter := formatter.NewPortTableFormatter()
-			table := fmtter.Format(foundConns)
-			fmt.Println(table)
+			// 각 결과를 포맷팅하여 출력
+			fmtter := formatter.NewProcessInfoFormatter()
+			for _, result := range results {
+				// 프로세스 상태 정보 가져오기
+				proc, err := process.NewProcess(result.PID)
+				var status []string
+				if err == nil {
+					status, _ = proc.Status()
+				}
+				if len(status) == 0 {
+					status = []string{"N/A"}
+				}
+
+				// 결과 타입에 따라 메시지 추가
+				var typeLabel string
+				switch result.Type {
+				case "pid":
+					typeLabel = fmt.Sprintf("Found by PID: %d", result.PID)
+				case "port":
+					typeLabel = fmt.Sprintf("Found by Port: %d", result.Port)
+				}
+
+				// 프로세스 정보 출력 (헤더 포함)
+				info := fmtter.Format(
+					typeLabel,
+					int(result.PID),
+					result.ProcessInfo.Name,
+					status,
+					result.Connections,
+				)
+				fmt.Println(info)
+			}
 
 			return nil
 		},

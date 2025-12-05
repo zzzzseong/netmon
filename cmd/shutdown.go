@@ -54,7 +54,7 @@ func newShutdownCmd() *cobra.Command {
 
 		// 포맷터를 사용하여 프로세스 정보 출력
 		fmtter := formatter.NewProcessInfoFormatter()
-		info := fmtter.Format(pid, processName, status, connections)
+		info := fmtter.Format("", pid, processName, status, connections)
 		fmt.Println(info)
 
 		// 인터랙티브 확인 프롬프트
