@@ -13,8 +13,8 @@ import (
 // It displays network interfaces with IP addresses.
 func newIPCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "ip",
-		Short: "Show network interface information",
+		Use:   "ip [-a]",
+		Short: "Show network interfaces (-a: include IPv6)",
 		Long:  `Display network interfaces with IP addresses.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// -a 플래그 확인

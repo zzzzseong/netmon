@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"golang.org/x/net/route"
+	"netmon/utils"
 )
 
 // BSDRouteProvider is a RouteProvider implementation using BSD routing sockets.
@@ -113,7 +114,7 @@ func (p *BSDRouteProvider) GetRoutes() ([]RouteEntry, error) {
 
 		// Source IP가 없고 인터페이스가 있으면 해당 인터페이스의 IP 가져오기
 		if entry.Source == "" && entry.Interface != "" {
-			if srcIP := getInterfaceIP(entry.Interface); srcIP != "" {
+			if srcIP, err := utils.GetInterfaceIP(entry.Interface); err == nil {
 				entry.Source = srcIP
 			}
 		}

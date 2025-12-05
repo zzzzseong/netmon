@@ -97,14 +97,11 @@ func (f *InterfaceTableFormatter) Format(interfaces []net.InterfaceStat, showAll
 		})
 	}
 
-	// 헤더 스타일 적용 (가운데 정렬 및 너비 설정)
+	// 헤더 생성
 	headerStyle := style.HeaderStyle.Copy().Align(lipgloss.Center)
-	styledHeaders := []string{
-		headerStyle.Width(12).Render("INTERFACE"),
-		headerStyle.Width(40).Render("IP ADDRESS"),
-		headerStyle.Width(20).Render("MAC ADDRESS"),
-		headerStyle.Width(8).Render("STATUS"),
-		headerStyle.Width(6).Render("MTU"),
+	styledHeaders := make([]string, len(InterfaceTableColumns))
+	for i, col := range InterfaceTableColumns {
+		styledHeaders[i] = headerStyle.Width(col.Width).Render(col.Title)
 	}
 
 	// 테이블 생성 및 스타일링

@@ -90,14 +90,11 @@ func (f *RouteTableFormatter) Format(routes []provider.RouteEntry) string {
 		})
 	}
 
-	// 헤더 스타일 적용
+	// 헤더 생성
 	headerStyle := style.HeaderStyle.Copy()
-	styledHeaders := []string{
-		headerStyle.Render("DESTINATION"),
-		headerStyle.Render("GATEWAY"),
-		headerStyle.Render("INTERFACE"),
-		headerStyle.Render("METRIC"),
-		headerStyle.Render("SOURCE"),
+	styledHeaders := make([]string, len(RouteTableColumns))
+	for i, col := range RouteTableColumns {
+		styledHeaders[i] = headerStyle.Render(col.Title)
 	}
 
 	// 테이블 생성 및 스타일링

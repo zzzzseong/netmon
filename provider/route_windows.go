@@ -8,6 +8,7 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/windows"
+	"netmon/utils"
 )
 
 var (
@@ -138,7 +139,7 @@ func (p *WindowsRouteProvider) GetRoutes() ([]RouteEntry, error) {
 		// Source IP는 Windows API에서 직접 제공하지 않으므로
 		// 인터페이스에서 가져옴
 		if entry.Interface != "" {
-			if srcIP := getInterfaceIP(entry.Interface); srcIP != "" {
+			if srcIP, err := utils.GetInterfaceIP(entry.Interface); err == nil {
 				entry.Source = srcIP
 			}
 		}

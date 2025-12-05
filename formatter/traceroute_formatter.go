@@ -32,21 +32,24 @@ func NewTracerouteFormatter() *TracerouteFormatter {
 func (f *TracerouteFormatter) PrintTableHeader() {
 	headerStyle := style.HeaderStyle.Copy()
 
-	hopHeader := headerStyle.Width(6).Render("HOP")
-	hostHeader := headerStyle.Width(40).Render("HOST")
-	rtt1Header := headerStyle.Width(12).Render("RTT 1")
-	rtt2Header := headerStyle.Width(12).Render("RTT 2")
-	rtt3Header := headerStyle.Width(12).Render("RTT 3")
+	// 헤더 생성
+	headers := make([]string, len(TracerouteTableColumns))
+	for i, col := range TracerouteTableColumns {
+		headers[i] = headerStyle.Width(col.Width).Render(col.Title)
+	}
 
 	border := style.TableBorderStyle.Render("─")
 
-	fmt.Printf("%s  %s  %s  %s  %s\n", hopHeader, hostHeader, rtt1Header, rtt2Header, rtt3Header)
+	// 헤더 출력
+	fmt.Printf("%s  %s  %s  %s  %s\n", headers[0], headers[1], headers[2], headers[3], headers[4])
+	
+	// 구분선 출력
 	fmt.Printf("%s  %s  %s  %s  %s\n",
-		strings.Repeat(border, 6),
-		strings.Repeat(border, 40),
-		strings.Repeat(border, 12),
-		strings.Repeat(border, 12),
-		strings.Repeat(border, 12))
+		strings.Repeat(border, TracerouteTableHopWidth),
+		strings.Repeat(border, TracerouteTableHostWidth),
+		strings.Repeat(border, TracerouteTableRTT1Width),
+		strings.Repeat(border, TracerouteTableRTT2Width),
+		strings.Repeat(border, TracerouteTableRTT3Width))
 }
 
 // PrintHopLine prints a single hop line with formatted information.

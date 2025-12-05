@@ -10,30 +10,17 @@ import (
 )
 
 // printCustomHelp prints a beautifully styled help message
-func printCustomHelp(cmd *cobra.Command, args []string) {
-	// ASCII Art 스타일링
-	asciiStyle := lipgloss.NewStyle().
-		Foreground(style.PrimaryColor).
-		Bold(true)
-
+func printCustomHelp(cmd *cobra.Command, args []string, cfg Config) {
 	// Version 정보
-	versionText := fmt.Sprintf("Version %s", Version)
-	versionStyle := lipgloss.NewStyle().
-		Foreground(style.SecondaryColor).
-		Bold(true).
-		MarginTop(1)
+	versionText := fmt.Sprintf("Version %s", cfg.Version)
 
 	// Description
 	descText := "A powerful CLI tool for monitoring network connections and managing processes."
-	descStyle := lipgloss.NewStyle().
-		Foreground(style.SubtleColor).
-		Italic(true).
-		MarginBottom(2)
 
 	// ASCII Art 출력
-	fmt.Print(asciiStyle.Render(style.ASCIIArt))
-	fmt.Println(versionStyle.Render(versionText))
-	fmt.Println(descStyle.Render(descText))
+	fmt.Print(style.ASCIIStyle.Render(style.ASCIIArt))
+	fmt.Println(style.VersionTextStyle.Render(versionText))
+	fmt.Println(style.DescTextStyle.Render(descText))
 
 	// Usage 섹션
 	usageHeader := lipgloss.NewStyle().
@@ -108,11 +95,7 @@ func printCustomHelp(cmd *cobra.Command, args []string) {
 
 	// Footer
 	footerText := "For more information, visit: https://github.com/zzzzseong/netmon"
-	footerStyle := lipgloss.NewStyle().
-		Foreground(style.SubtleColor).
-		Italic(true).
-		MarginTop(2)
-	fmt.Println(footerStyle.Render(footerText))
+	fmt.Println(style.FooterTextStyle.Copy().MarginTop(2).Render(footerText))
 }
 
 // printCustomUsage prints a custom usage message

@@ -13,8 +13,8 @@ import (
 // It displays all active listening ports with detailed process information.
 func newLsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List active ports",
+		Use:   "ls [-a]",
+		Short: "List active ports (-a: include UDP)",
 		Long:  `Display all active listening ports with detailed process information.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// -a 옵션 값 가져오기

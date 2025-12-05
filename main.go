@@ -11,10 +11,12 @@ const (
 )
 
 func main() {
-	// cmd 패키지에 버전 정보 설정
-	cmd.Version = Version
-	cmd.BuildDate = BuildDate
+	// Create configuration with version information
+	cfg := cmd.Config{
+		Version:   Version,
+		BuildDate: BuildDate,
+	}
 
-	// Cobra 명령어 실행
-	cmd.Execute()
+	// Execute Cobra commands with configuration
+	cmd.Execute(cfg)
 }

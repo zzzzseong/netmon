@@ -122,6 +122,33 @@ var (
 	
 	// 테이블 테두리 스타일
 	TableBorderStyle = lipgloss.NewStyle().Foreground(PrimaryColor)
+	
+	// ASCII Art 스타일 (help, version 명령어에서 재사용)
+	ASCIIStyle = lipgloss.NewStyle().
+		Foreground(PrimaryColor).
+		Bold(true)
+	
+	// Version 텍스트 스타일
+	VersionTextStyle = lipgloss.NewStyle().
+		Foreground(SecondaryColor).
+		Bold(true).
+		MarginTop(1)
+	
+	// Build 텍스트 스타일
+	BuildTextStyle = lipgloss.NewStyle().
+		Foreground(SubtleColor).
+		MarginBottom(1)
+	
+	// Footer 텍스트 스타일
+	FooterTextStyle = lipgloss.NewStyle().
+		Foreground(SubtleColor).
+		Italic(true)
+	
+	// Description 텍스트 스타일
+	DescTextStyle = lipgloss.NewStyle().
+		Foreground(SubtleColor).
+		Italic(true).
+		MarginBottom(2)
 )
 
 // 테이블 너비 상수

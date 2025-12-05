@@ -1,12 +1,15 @@
-package provider
+package formatter
 
 import (
 	"fmt"
 	"strings"
+
+	"netmon/provider"
 )
 
-// FormatLinuxStyle은 RouteEntry를 Linux ip route 스타일로 포맷팅합니다
-func FormatLinuxStyle(entry RouteEntry) string {
+// FormatLinuxStyle formats a RouteEntry in Linux ip route style.
+// It returns a string representation similar to the output of "ip route" command.
+func FormatLinuxStyle(entry provider.RouteEntry) string {
 	var parts []string
 
 	// Destination
@@ -35,12 +38,12 @@ func FormatLinuxStyle(entry RouteEntry) string {
 	return strings.Join(parts, " ")
 }
 
-// FormatLinuxStyleRoutes는 RouteEntry 슬라이스를 Linux ip route 스타일로 포맷팅합니다
-func FormatLinuxStyleRoutes(entries []RouteEntry) string {
+// FormatLinuxStyleRoutes formats a slice of RouteEntry in Linux ip route style.
+// Each route is formatted on a separate line.
+func FormatLinuxStyleRoutes(entries []provider.RouteEntry) string {
 	var lines []string
 	for _, entry := range entries {
 		lines = append(lines, FormatLinuxStyle(entry))
 	}
 	return strings.Join(lines, "\n")
 }
-

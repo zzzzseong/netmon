@@ -8,14 +8,14 @@ import (
 
 // newRootCmd creates and returns the root command for the netmon CLI.
 // It sets up the base command with help and usage functions.
-func newRootCmd() *cobra.Command {
+func newRootCmd(cfg Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "netmon",
 		Short: "A modern, beautiful CLI tool for network monitoring and process management",
 		Long: `A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			// No arguments provided, show help
-			printCustomHelp(cmd, args)
+			printCustomHelp(cmd, args, cfg)
 		},
 	}
 
@@ -30,18 +30,20 @@ func newRootCmd() *cobra.Command {
 	cmd.AddCommand(newLsCmd())
 	cmd.AddCommand(newTracerouteCmd())
 	cmd.AddCommand(newShutdownCmd())
-	cmd.AddCommand(newVersionCmd())
+	cmd.AddCommand(newVersionCmd(cfg))
 
 	return cmd
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	rootCmd := newRootCmd()
+func Execute(cfg Config) {
+	rootCmd := newRootCmd(cfg)
 
 	// Set custom help and usage functions
-	rootCmd.SetHelpFunc(printCustomHelp)
+	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		printCustomHelp(cmd, args, cfg)
+	})
 	rootCmd.SetUsageFunc(printCustomUsage)
 
 	err := rootCmd.Execute()

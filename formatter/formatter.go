@@ -92,16 +92,7 @@ func (f *PortTableFormatter) Format(connections map[string]net.ConnectionStat) s
 		})
 	}
 
-	return CreateTable(rows, []TableColumn{
-		{Width: 10, Title: "PROTOCOL"},
-		{Width: 19, Title: "LOCAL ADDRESS"},
-		{Width: 10, Title: "STATUS"},
-		{Width: 8, Title: "PID"},
-		{Width: 25, Title: "PROCESS NAME"},
-		{Width: 15, Title: "USERNAME"},
-		{Width: 8, Title: "CPU %"},
-		{Width: 8, Title: "MEM %"},
-	}, style.TableWidthPort)
+	return CreateTable(rows, PortTableColumns, style.TableWidthPort)
 }
 
 // ProcessInfoFormatter formats process information for display.
