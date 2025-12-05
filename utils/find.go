@@ -38,22 +38,30 @@ func FindByPID(pid int32) (*FindResult, error) {
 		connections = []net.ConnectionStat{}
 	}
 
-	// LISTEN 상태인 연결만 필터링
+	// LISTEN 상태와 ESTABLISHED 상태 연결 분리
 	listeningConns := make([]net.ConnectionStat, 0)
+	establishedConns := make([]net.ConnectionStat, 0)
+	
 	for _, conn := range connections {
 		if conn.Status == "LISTEN" || (IsUDP(conn.Type) && conn.Laddr.Port > 0) {
 			listeningConns = append(listeningConns, conn)
+		} else if conn.Status == "ESTABLISHED" {
+			establishedConns = append(establishedConns, conn)
 		}
 	}
+
+	// LISTEN 연결을 먼저, ESTABLISHED 연결을 나중에 추가
+	allConns := append(listeningConns, establishedConns...)
 
 	processInfo := GetProcessInfo(pid)
 
 	return &FindResult{
 		Type:        "pid",
 		PID:         pid,
-		Connections: listeningConns,
+		Connections: allConns,
 		ProcessInfo: processInfo,
 	}, nil
+
 }
 
 // FindByPort finds processes using a specific port.
@@ -68,39 +76,54 @@ func FindByPort(port int) ([]*FindResult, error) {
 		return nil, fmt.Errorf("failed to get network connection information: %w", err)
 	}
 
-	// PID별로 그룹화
-	pidMap := make(map[int32]*FindResult)
+	// 해당 포트를 LISTEN하고 있는 PID 찾기
+	pidSet := make(map[int32]bool)
 
 	for _, conn := range connections {
 		// LISTEN 상태 또는 UDP이면서 포트가 일치하는 경우
 		isListening := conn.Status == "LISTEN" || (IsUDP(conn.Type) && conn.Laddr.Port > 0)
 		if isListening && conn.Laddr.Port == uint32(port) {
-			pid := int32(conn.Pid)
-			
-			// 이미 해당 PID가 있으면 연결 추가, 없으면 새로 생성
-			if result, exists := pidMap[pid]; exists {
-				result.Connections = append(result.Connections, conn)
-			} else {
-				processInfo := GetProcessInfo(pid)
-				pidMap[pid] = &FindResult{
-					Type:        "port",
-					PID:         pid,
-					Port:        uint32(port),
-					Connections: []net.ConnectionStat{conn},
-					ProcessInfo: processInfo,
-				}
-			}
+			pidSet[int32(conn.Pid)] = true
 		}
 	}
 
-	// 맵을 슬라이스로 변환
-	results := make([]*FindResult, 0, len(pidMap))
-	for _, result := range pidMap {
-		results = append(results, result)
+	// 찾은 PID들의 모든 연결 정보 가져오기 (LISTEN + ESTABLISHED)
+	results := make([]*FindResult, 0, len(pidSet))
+	for pid := range pidSet {
+		// 해당 PID의 모든 연결 가져오기
+		pidConnections, err := net.ConnectionsPid("inet", pid)
+		if err != nil {
+			pidConnections = []net.ConnectionStat{}
+		}
+
+		// LISTEN과 ESTABLISHED 분리
+		listeningConns := make([]net.ConnectionStat, 0)
+		establishedConns := make([]net.ConnectionStat, 0)
+
+		for _, conn := range pidConnections {
+			if conn.Status == "LISTEN" || (IsUDP(conn.Type) && conn.Laddr.Port > 0) {
+				listeningConns = append(listeningConns, conn)
+			} else if conn.Status == "ESTABLISHED" {
+				establishedConns = append(establishedConns, conn)
+			}
+		}
+
+		// LISTEN 먼저, ESTABLISHED 나중에
+		allConns := append(listeningConns, establishedConns...)
+
+		processInfo := GetProcessInfo(pid)
+		results = append(results, &FindResult{
+			Type:        "port",
+			PID:         pid,
+			Port:        uint32(port),
+			Connections: allConns,
+			ProcessInfo: processInfo,
+		})
 	}
 
 	return results, nil
 }
+
 
 // FindByProcessName finds processes by name or command line (partial match).
 // It searches both process name and full command line (like ps -ef).
@@ -145,22 +168,30 @@ func FindByProcessName(name string) ([]*FindResult, error) {
 				connections = []net.ConnectionStat{}
 			}
 
-			// LISTEN 상태인 연결만 필터링
+			// LISTEN과 ESTABLISHED 분리
 			listeningConns := make([]net.ConnectionStat, 0)
+			establishedConns := make([]net.ConnectionStat, 0)
+			
 			for _, conn := range connections {
 				if conn.Status == "LISTEN" || (IsUDP(conn.Type) && conn.Laddr.Port > 0) {
 					listeningConns = append(listeningConns, conn)
+				} else if conn.Status == "ESTABLISHED" {
+					establishedConns = append(establishedConns, conn)
 				}
 			}
+
+			// LISTEN 먼저, ESTABLISHED 나중에
+			allConns := append(listeningConns, establishedConns...)
 
 			processInfo := GetProcessInfo(pid)
 			results = append(results, &FindResult{
 				Type:        "name",
 				PID:         pid,
-				Connections: listeningConns,
+				Connections: allConns,
 				ProcessInfo: processInfo,
 			})
 		}
+
 	}
 
 	return results, nil

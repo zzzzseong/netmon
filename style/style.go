@@ -158,5 +158,9 @@ const (
 	TableWidthInterface  = 110
 	TableWidthPort       = 130
 	TableWidthTraceroute = 100
+	TableWidthConnection = 120
+	TableWidthDNS        = 80
 )
+
+
 

@@ -162,18 +162,32 @@ func (f *ProcessInfoFormatter) FormatWithCmdline(header string, pid int, process
 		builder.WriteString("\n")
 	}
 
-	// 포트 정보 추가
+
+	// 연결 정보 추가 (LISTEN과 ESTABLISHED 분리)
 	if len(connections) > 0 {
 		subtleStyle := lipgloss.NewStyle().Foreground(style.SubtleColor)
 		portStyle := lipgloss.NewStyle().Foreground(style.InfoColor).MarginLeft(2)
+		connStyle := lipgloss.NewStyle().Foreground(style.WarningColor).MarginLeft(2)
 		
-		builder.WriteString("\n")
-		builder.WriteString(subtleStyle.Render("Active Ports:"))
-		builder.WriteString("\n")
+		// LISTEN 포트와 ESTABLISHED 연결 분리
+		listeningPorts := make([]net.ConnectionStat, 0)
+		establishedConns := make([]net.ConnectionStat, 0)
 		
 		for _, conn := range connections {
-			// LISTEN 상태이거나 UDP인 경우 표시
 			if conn.Status == "LISTEN" || (conn.Status == "" && utils.IsUDP(conn.Type)) {
+				listeningPorts = append(listeningPorts, conn)
+			} else if conn.Status == "ESTABLISHED" {
+				establishedConns = append(establishedConns, conn)
+			}
+		}
+		
+		// Listening Ports 표시
+		if len(listeningPorts) > 0 {
+			builder.WriteString("\n")
+			builder.WriteString(subtleStyle.Render("Listening Ports:"))
+			builder.WriteString("\n")
+			
+			for _, conn := range listeningPorts {
 				portInfo := fmt.Sprintf("  • %s:%d (%s)",
 					conn.Laddr.IP,
 					conn.Laddr.Port,
@@ -182,9 +196,28 @@ func (f *ProcessInfoFormatter) FormatWithCmdline(header string, pid int, process
 				builder.WriteString("\n")
 			}
 		}
+		
+		// Active Connections 표시
+		if len(establishedConns) > 0 {
+			builder.WriteString("\n")
+			builder.WriteString(subtleStyle.Render("Active Connections:"))
+			builder.WriteString("\n")
+			
+			for _, conn := range establishedConns {
+				connInfo := fmt.Sprintf("  • %s:%d → %s:%d",
+					conn.Laddr.IP,
+					conn.Laddr.Port,
+					conn.Raddr.IP,
+					conn.Raddr.Port)
+				builder.WriteString(connStyle.Render(connInfo))
+				builder.WriteString("\n")
+			}
+		}
 	}
 
 	infoBox := style.InfoBoxStyle.Render(builder.String())
 	return infoBox
 }
+
+
 

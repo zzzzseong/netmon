@@ -36,6 +36,22 @@
   - Cross-platform support (traceroute/tracert)
   - Beautiful table format with color-coded RTT values
   - Real-time animated spinner during execution
+- **🔗 Active Connections** - Display all ESTABLISHED TCP connections
+  - Shows local and remote addresses
+  - Process information for each connection
+  - Sorted by remote address for easy scanning
+- **📊 Network Statistics** - View network statistics summary at a glance
+  - Connection counts (TCP/UDP)
+  - Listening ports count
+  - Network interfaces count
+  - Default gateway information
+  - Top processes by connection count
+- **🌐 DNS Lookup** - Perform DNS lookups with clean output
+  - Forward lookup (A and AAAA records)
+  - Reverse lookup (PTR records)
+  - Response time measurement
+  - No external dependencies (uses Go's net package)
+
 
 ### 🔍 Process Management
 - **Smart Process Search** - Find processes by PID or port with automatic detection
@@ -254,6 +270,100 @@ netmon traceroute google.com
 
 ---
 
+### 🔗 View Active Connections
+
+Display all active ESTABLISHED TCP connections:
+
+```bash
+netmon conn
+```
+
+**Output:**
+```
+╭────────────┬───────────────────────────┬───────────────────────────┬────────────┬─────────────────────╮
+│  PROTOCOL  │      LOCAL ADDRESS        │      REMOTE ADDRESS       │    PID     │      PROCESS        │
+├────────────┼───────────────────────────┼───────────────────────────┼────────────┼─────────────────────┤
+│ TCP        │ 192.168.1.100:54321       │ 142.250.80.46:443         │ 12345      │ chrome              │
+│ TCP        │ 192.168.1.100:54322       │ 20.205.243.166:443        │ 23456      │ slack               │
+╰────────────┴───────────────────────────┴───────────────────────────┴────────────┴─────────────────────╯
+```
+
+---
+
+### 📊 View Network Statistics
+
+Display network statistics summary:
+
+```bash
+netmon stats
+```
+
+**Output:**
+```
+╭────────────────────────────────────────────────────────────╮
+│                                                            │
+│  Network Summary                                           │
+│                                                            │
+│  Active TCP Connections:       150                         │
+│  Active UDP Connections:       0                           │
+│  Listening Ports:              42                          │
+│  Network Interfaces:           19                          │
+│  Default Gateway:              192.168.1.1                 │
+│                                                            │
+│  Top Processes by Connections:                             │
+│    • chrome (25 connections)                               │
+│    • node (12 connections)                                 │
+│    • docker (8 connections)                                │
+│                                                            │
+╰────────────────────────────────────────────────────────────╯
+```
+
+---
+
+### 🌐 Perform DNS Lookup
+
+Lookup DNS records for a domain or IP address:
+
+```bash
+# Forward lookup (domain to IP)
+netmon dns google.com
+```
+
+**Output:**
+```
+🔍 DNS Lookup: google.com
+
+╭───────────────┬──────────────────────────────────────────────────────────────╮
+│     TYPE      │                            VALUE                             │
+├───────────────┼──────────────────────────────────────────────────────────────┤
+│ A             │ 142.250.206.206                                              │
+│ AAAA          │ 2404:6800:400a:813::200e                                     │
+╰───────────────┴──────────────────────────────────────────────────────────────╯
+
+Response Time: 6ms
+```
+
+```bash
+# Reverse lookup (IP to domain)
+netmon dns 8.8.8.8
+```
+
+**Output:**
+```
+🔍 DNS Lookup: 8.8.8.8
+
+╭───────────────┬──────────────────────────────────────────────────────────────╮
+│     TYPE      │                            VALUE                             │
+├───────────────┼──────────────────────────────────────────────────────────────┤
+│ PTR           │ dns.google.                                                  │
+╰───────────────┴──────────────────────────────────────────────────────────────╯
+
+Response Time: 3ms
+```
+
+
+---
+
 ### 🔍 Find Process by PID or Port
 
 Find processes using a smart search that automatically detects PID or port:
@@ -347,6 +457,9 @@ Are you sure you want to shutdown this process?
 | `ls` | List all active ports with process metrics | `netmon ls` | `-a` (include UDP) |
 | `ip` | Show network interfaces | `netmon ip` | `-a` (show IPv6) |
 | `route` | Display routing table with smart filtering | `netmon route` | - |
+| `conn` | Show active ESTABLISHED connections | `netmon conn` | - |
+| `stats` | Display network statistics summary | `netmon stats` | - |
+| `dns` | Perform DNS lookup | `netmon dns <domain|ip>` | - |
 | `find` | Find process by PID or port (auto-detects) | `netmon find <pid|port>` | - |
 | `shutdown` | Shutdown a process | `netmon shutdown <pid>` | - |
 | `traceroute` | Trace route to network host | `netmon traceroute <host>` | - |

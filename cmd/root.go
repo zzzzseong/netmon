@@ -30,7 +30,13 @@ func newRootCmd(cfg Config) *cobra.Command {
 	cmd.AddCommand(newLsCmd())
 	cmd.AddCommand(newTracerouteCmd())
 	cmd.AddCommand(newShutdownCmd())
+	cmd.AddCommand(newStatsCmd())
+	cmd.AddCommand(newDNSCmd())
 	cmd.AddCommand(newVersionCmd(cfg))
+
+
+
+
 
 	return cmd
 }

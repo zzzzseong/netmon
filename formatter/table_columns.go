@@ -77,3 +77,35 @@ var TracerouteTableColumns = []TableColumn{
 	{Width: TracerouteTableRTT2Width, Title: "RTT 2"},
 	{Width: TracerouteTableRTT3Width, Title: "RTT 3"},
 }
+
+// Table column width constants for connection table
+const (
+	ConnectionTableProtocolWidth      = 10
+	ConnectionTableLocalAddressWidth  = 25
+	ConnectionTableRemoteAddressWidth = 25
+	ConnectionTablePIDWidth           = 10
+	ConnectionTableProcessNameWidth   = 25
+)
+
+// ConnectionTableColumns defines the column configuration for the connection table
+var ConnectionTableColumns = []TableColumn{
+	{Width: ConnectionTableProtocolWidth, Title: "PROTOCOL"},
+	{Width: ConnectionTableLocalAddressWidth, Title: "LOCAL ADDRESS"},
+	{Width: ConnectionTableRemoteAddressWidth, Title: "REMOTE ADDRESS"},
+	{Width: ConnectionTablePIDWidth, Title: "PID"},
+	{Width: ConnectionTableProcessNameWidth, Title: "PROCESS"},
+}
+
+// Table column width constants for DNS table
+const (
+	DNSTableRecordTypeWidth = 12
+	DNSTableValueWidth      = 60
+)
+
+// DNSTableColumns defines the column configuration for the DNS table
+var DNSTableColumns = []TableColumn{
+	{Width: DNSTableRecordTypeWidth, Title: "TYPE"},
+	{Width: DNSTableValueWidth, Title: "VALUE"},
+}
+
+

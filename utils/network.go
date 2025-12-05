@@ -63,6 +63,19 @@ func FilterListeningConnections(connections []net.ConnectionStat, includeUDP boo
 	return listeningConns
 }
 
+// FilterEstablishedConnections filters connections to only include ESTABLISHED connections.
+// Returns a slice of connections that are in ESTABLISHED state.
+func FilterEstablishedConnections(connections []net.ConnectionStat) []net.ConnectionStat {
+	established := make([]net.ConnectionStat, 0)
+	for _, conn := range connections {
+		if conn.Status == "ESTABLISHED" {
+			established = append(established, conn)
+		}
+	}
+	return established
+}
+
+
 // GetProcessInfo retrieves process information for the given PID.
 // It returns a ProcessInfo struct with name, username, CPU and memory usage.
 // If the process cannot be found or accessed, it returns default values ("N/A").
