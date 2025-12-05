@@ -46,16 +46,31 @@ func getStatusStyled(status string) string {
 }
 
 // Format formats connection information as a table.
-// It takes a map of connections keyed by connection type and port,
-// and returns a formatted table string with process information.
-func (f *PortTableFormatter) Format(connections map[string]net.ConnectionStat) string {
+// It takes a slice of connections and returns a formatted table string with process information.
+func (f *PortTableFormatter) Format(connections interface{}) string {
+	// 슬라이스 또는 맵을 받을 수 있도록 처리
+	var connSlice []net.ConnectionStat
+	
+	switch v := connections.(type) {
+	case []net.ConnectionStat:
+		connSlice = v
+	case map[string]net.ConnectionStat:
+		// 맵을 슬라이스로 변환
+		connSlice = make([]net.ConnectionStat, 0, len(v))
+		for _, conn := range v {
+			connSlice = append(connSlice, conn)
+		}
+	default:
+		return ""
+	}
+
 	// 사이즈가 확정된 슬라이스로 메모리 할당 최적화
-	rows := make([][]string, 0, len(connections))
+	rows := make([][]string, 0, len(connSlice))
 	
 	// 프로세스 정보 캐싱을 위한 맵
 	processCache := make(map[int32]utils.ProcessInfo)
 
-	for _, conn := range connections {
+	for _, conn := range connSlice {
 		// 프로토콜 및 주소
 		protocol := utils.ConnectionTypeToString(conn.Type)
 		localAddr := fmt.Sprintf("%s:%d", conn.Laddr.IP, conn.Laddr.Port)

@@ -32,8 +32,11 @@ func newLsCmd() *cobra.Command {
 			// LISTEN 상태인 연결만 필터링 (-a 옵션이 있을 때만 UDP 포함)
 			listeningConns := utils.FilterListeningConnections(connections, includeUDP)
 
+			// 포트 번호로 정렬
+			sortedConns := utils.SortConnectionsByPort(listeningConns)
+
 			// 포맷터를 사용하여 테이블 생성
-			table := fmtter.Format(listeningConns)
+			table := fmtter.Format(sortedConns)
 			fmt.Println(table)
 
 			return nil
