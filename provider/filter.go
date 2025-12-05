@@ -5,7 +5,9 @@ import (
 	"strings"
 )
 
-// ShouldIncludeRoute는 라우트를 출력에 포함할지 결정합니다
+// ShouldIncludeRoute determines whether a route should be included in the output.
+// It filters out single-host routes (/32), loopback, link-local, multicast, and broadcast routes.
+// Returns true if the route should be displayed, false otherwise.
 func ShouldIncludeRoute(entry RouteEntry) bool {
 	dest := entry.Destination
 
@@ -61,7 +63,8 @@ func ShouldIncludeRoute(entry RouteEntry) bool {
 	return ones <= 31 && (entry.Gateway == "" || entry.Gateway == "-")
 }
 
-// FilterRoutes는 RouteEntry 슬라이스를 필터링합니다
+// FilterRoutes filters a slice of RouteEntry based on ShouldIncludeRoute criteria.
+// Returns a new slice containing only the routes that should be displayed.
 func FilterRoutes(entries []RouteEntry) []RouteEntry {
 	var filtered []RouteEntry
 	for _, entry := range entries {

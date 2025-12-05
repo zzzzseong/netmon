@@ -9,20 +9,23 @@ import (
 	"golang.org/x/net/route"
 )
 
-// BSDRouteProvider는 BSD routing socket을 사용하는 RouteProvider 구현입니다
+// BSDRouteProvider is a RouteProvider implementation using BSD routing sockets.
+// It works on macOS, FreeBSD, OpenBSD, and NetBSD.
 type BSDRouteProvider struct{}
 
-// NewBSDRouteProvider는 새로운 BSDRouteProvider를 생성합니다
+// NewBSDRouteProvider creates a new BSDRouteProvider instance.
 func NewBSDRouteProvider() *BSDRouteProvider {
 	return &BSDRouteProvider{}
 }
 
-// NewRouteProvider는 현재 OS에 맞는 RouteProvider를 반환합니다
+// NewRouteProvider returns a RouteProvider implementation for the current OS.
+// On BSD systems (macOS, FreeBSD, OpenBSD, NetBSD), it returns a BSDRouteProvider.
 func NewRouteProvider() RouteProvider {
 	return NewBSDRouteProvider()
 }
 
-// GetRoutes는 BSD routing socket을 통해 라우팅 테이블을 조회합니다
+// GetRoutes retrieves the routing table using BSD routing sockets.
+// Returns a slice of RouteEntry and an error if the operation fails.
 func (p *BSDRouteProvider) GetRoutes() ([]RouteEntry, error) {
 	// FetchRIB를 사용하여 라우팅 테이블 조회
 	rib, err := route.FetchRIB(0, route.RIBTypeRoute, 0)

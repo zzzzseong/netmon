@@ -13,8 +13,10 @@ import (
 	"netmon/style"
 )
 
-// shutdownCmd represents the shutdown command
-var shutdownCmd = &cobra.Command{
+// newShutdownCmd creates and returns the shutdown command.
+// It safely shuts down a process with interactive confirmation.
+func newShutdownCmd() *cobra.Command {
+	return &cobra.Command{
 	Use:   "shutdown <pid>",
 	Short: "Shutdown a process",
 	Long:  `Safely shutdown a process with interactive confirmation.`,
@@ -91,8 +93,5 @@ var shutdownCmd = &cobra.Command{
 
 		return nil
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(shutdownCmd)
+	}
 }

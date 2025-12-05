@@ -11,14 +11,6 @@ import (
 
 // printCustomHelp prints a beautifully styled help message
 func printCustomHelp(cmd *cobra.Command, args []string) {
-	// ASCII Art
-	asciiArt := `███╗   ██╗███████╗████████╗███╗   ███╗ ██████╗ ███╗   ██╗
-████╗  ██║██╔════╝╚══██╔══╝████╗ ████║██╔═══██╗████╗  ██║
-██╔██╗ ██║█████╗     ██║   ██╔████╔██║██║   ██║██╔██╗ ██║
-██║╚██╗██║██╔══╝     ██║   ██║╚██╔╝██║██║   ██║██║╚██╗██║
-██║ ╚████║███████╗   ██║   ██║ ╚═╝ ██║╚██████╔╝██║ ╚████║
-╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═══╝`
-
 	// ASCII Art 스타일링
 	asciiStyle := lipgloss.NewStyle().
 		Foreground(style.PrimaryColor).
@@ -39,7 +31,7 @@ func printCustomHelp(cmd *cobra.Command, args []string) {
 		MarginBottom(2)
 
 	// ASCII Art 출력
-	fmt.Print(asciiStyle.Render(asciiArt))
+	fmt.Print(asciiStyle.Render(style.ASCIIArt))
 	fmt.Println(versionStyle.Render(versionText))
 	fmt.Println(descStyle.Render(descText))
 

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
 	"github.com/shirou/gopsutil/v3/net"
 	"netmon/style"
 	"netmon/utils"
@@ -19,9 +18,10 @@ var (
 	memStyle      = lipgloss.NewStyle().Foreground(style.InfoColor)
 )
 
-// PortTableFormatter는 포트 목록을 테이블 형식으로 포맷팅합니다
+// PortTableFormatter formats port listings in table format.
 type PortTableFormatter struct{}
 
+// NewPortTableFormatter creates a new PortTableFormatter instance.
 func NewPortTableFormatter() *PortTableFormatter {
 	return &PortTableFormatter{}
 }
@@ -45,7 +45,9 @@ func getStatusStyled(status string) string {
 	return lipgloss.NewStyle().Foreground(color).Bold(true).Render(status)
 }
 
-// Format은 연결 정보를 테이블 형식으로 포맷팅합니다
+// Format formats connection information as a table.
+// It takes a map of connections keyed by connection type and port,
+// and returns a formatted table string with process information.
 func (f *PortTableFormatter) Format(connections map[string]net.ConnectionStat) string {
 	// 사이즈가 확정된 슬라이스로 메모리 할당 최적화
 	rows := make([][]string, 0, len(connections))
@@ -90,65 +92,28 @@ func (f *PortTableFormatter) Format(connections map[string]net.ConnectionStat) s
 		})
 	}
 
-	return createTable(rows, []tableColumn{
-		{width: 10, title: "PROTOCOL"},
-		{width: 19, title: "LOCAL ADDRESS"},
-		{width: 10, title: "STATUS"},
-		{width: 8, title: "PID"},
-		{width: 25, title: "PROCESS NAME"},
-		{width: 15, title: "USERNAME"},
-		{width: 8, title: "CPU %"},
-		{width: 8, title: "MEM %"},
-	}, 130)
+	return CreateTable(rows, []TableColumn{
+		{Width: 10, Title: "PROTOCOL"},
+		{Width: 19, Title: "LOCAL ADDRESS"},
+		{Width: 10, Title: "STATUS"},
+		{Width: 8, Title: "PID"},
+		{Width: 25, Title: "PROCESS NAME"},
+		{Width: 15, Title: "USERNAME"},
+		{Width: 8, Title: "CPU %"},
+		{Width: 8, Title: "MEM %"},
+	}, style.TableWidthPort)
 }
 
-// tableColumn 테이블 컬럼 정의
-type tableColumn struct {
-	width int
-	title string
-}
-
-// createTable 테이블 생성 헬퍼 함수
-func createTable(rows [][]string, columns []tableColumn, totalWidth int) string {
-	// 헤더 생성
-	headerStyle := style.HeaderStyle.Copy().Align(lipgloss.Center)
-	headers := make([]string, len(columns))
-	for i, col := range columns {
-		headers[i] = headerStyle.Width(col.width).Render(col.title)
-	}
-
-	// 테이블 생성
-	t := table.New().
-		Border(lipgloss.RoundedBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(style.PrimaryColor)).
-		StyleFunc(getTableRowStyle).
-		Headers(headers...).
-		Rows(rows...).
-		Width(totalWidth)
-
-	return t.String()
-}
-
-// getTableRowStyle 테이블 행 스타일 반환
-func getTableRowStyle(row, col int) lipgloss.Style {
-	color := lipgloss.Color("252")
-	if row%2 != 0 {
-		color = lipgloss.Color("248")
-	}
-	return lipgloss.NewStyle().
-		Foreground(color).
-		Align(lipgloss.Left).
-		Padding(0, 1)
-}
-
-// ProcessInfoFormatter는 프로세스 정보를 포맷팅합니다
+// ProcessInfoFormatter formats process information for display.
 type ProcessInfoFormatter struct{}
 
+// NewProcessInfoFormatter creates a new ProcessInfoFormatter instance.
 func NewProcessInfoFormatter() *ProcessInfoFormatter {
 	return &ProcessInfoFormatter{}
 }
 
-// Format은 프로세스 정보를 포맷팅합니다
+// Format formats process information including PID, name, status, and active ports.
+// Returns a formatted string with styled process information.
 func (f *ProcessInfoFormatter) Format(pid int, processName string, status []string, connections []net.ConnectionStat) string {
 	title := style.TitleStyle.Render("⚙️  Process Information")
 

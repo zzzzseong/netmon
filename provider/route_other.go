@@ -2,7 +2,8 @@
 
 package provider
 
-// NewRouteProvider는 현재 OS에 맞는 RouteProvider를 반환합니다
+// NewRouteProvider returns a RouteProvider implementation for the current OS.
+// For unsupported operating systems, it returns a FallbackRouteProvider.
 func NewRouteProvider() RouteProvider {
 	return NewFallbackRouteProvider()
 }

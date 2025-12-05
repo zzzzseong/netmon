@@ -16,15 +16,16 @@ var (
 	procFreeMibTable      = modiphlpapi.NewProc("FreeMibTable")
 )
 
-// WindowsRouteProvider는 Windows GetIpForwardTable2를 사용하는 RouteProvider 구현입니다
+// WindowsRouteProvider is a RouteProvider implementation using Windows GetIpForwardTable2 API.
 type WindowsRouteProvider struct{}
 
-// NewWindowsRouteProvider는 새로운 WindowsRouteProvider를 생성합니다
+// NewWindowsRouteProvider creates a new WindowsRouteProvider instance.
 func NewWindowsRouteProvider() *WindowsRouteProvider {
 	return &WindowsRouteProvider{}
 }
 
-// NewRouteProvider는 현재 OS에 맞는 RouteProvider를 반환합니다
+// NewRouteProvider returns a RouteProvider implementation for the current OS.
+// On Windows, it returns a WindowsRouteProvider.
 func NewRouteProvider() RouteProvider {
 	return NewWindowsRouteProvider()
 }
@@ -67,7 +68,8 @@ type mibIpforwardTable2 struct {
 	Table      [1]mibIpforwardRow2
 }
 
-// GetRoutes는 GetIpForwardTable2를 통해 라우팅 테이블을 조회합니다
+// GetRoutes retrieves the routing table using Windows GetIpForwardTable2 API.
+// Returns a slice of RouteEntry and an error if the operation fails.
 func (p *WindowsRouteProvider) GetRoutes() ([]RouteEntry, error) {
 	var table *mibIpforwardTable2
 

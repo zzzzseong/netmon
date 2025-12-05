@@ -9,23 +9,20 @@ import (
 )
 
 var (
-	Version   = "dev"
+	// Version is the application version, set at build time
+	Version = "dev"
+	// BuildDate is the build date, set at build time
 	BuildDate = "unknown"
 )
 
-// versionCmd represents the version command
-var versionCmd = &cobra.Command{
+// newVersionCmd creates and returns the version command.
+// It displays version and build information.
+func newVersionCmd() *cobra.Command {
+	return &cobra.Command{
 	Use:   "version",
 	Short: "Show version information",
 	Long:  `Display version and build information.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		asciiArt := `███╗   ██╗███████╗████████╗███╗   ███╗ ██████╗ ███╗   ██╗
-████╗  ██║██╔════╝╚══██╔══╝████╗ ████║██╔═══██╗████╗  ██║
-██╔██╗ ██║█████╗     ██║   ██╔████╔██║██║   ██║██╔██╗ ██║
-██║╚██╗██║██╔══╝     ██║   ██║╚██╔╝██║██║   ██║██║╚██╗██║
-██║ ╚████║███████╗   ██║   ██║ ╚═╝ ██║╚██████╔╝██║ ╚████║
-╚═╝  ╚═══╝╚══════╝   ╚═╝   ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═══╝`
-
 		asciiStyle := lipgloss.NewStyle().
 			Foreground(style.PrimaryColor).
 			Bold(true)
@@ -41,7 +38,7 @@ var versionCmd = &cobra.Command{
 			Foreground(style.SubtleColor).
 			MarginBottom(1)
 
-		fmt.Print(asciiStyle.Render(asciiArt))
+		fmt.Print(asciiStyle.Render(style.ASCIIArt))
 		fmt.Println(versionStyle.Render(versionText))
 		fmt.Println(buildStyle.Render(buildText))
 
@@ -51,8 +48,5 @@ var versionCmd = &cobra.Command{
 			Italic(true)
 		fmt.Println(footerStyle.Render(footerText))
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(versionCmd)
+	}
 }

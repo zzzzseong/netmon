@@ -9,15 +9,17 @@ import (
 	"strings"
 )
 
-// FallbackRouteProvider는 명령어 파싱을 사용하는 RouteProvider 구현입니다
+// FallbackRouteProvider is a RouteProvider implementation that uses command-line parsing.
+// It serves as a fallback for unsupported operating systems.
 type FallbackRouteProvider struct{}
 
-// NewFallbackRouteProvider는 새로운 FallbackRouteProvider를 생성합니다
+// NewFallbackRouteProvider creates a new FallbackRouteProvider instance.
 func NewFallbackRouteProvider() *FallbackRouteProvider {
 	return &FallbackRouteProvider{}
 }
 
-// GetRoutes는 시스템 명령어를 통해 라우팅 테이블을 조회합니다
+// GetRoutes retrieves the routing table by executing system commands and parsing their output.
+// Returns a slice of RouteEntry and an error if the operation fails.
 func (p *FallbackRouteProvider) GetRoutes() ([]RouteEntry, error) {
 	var cmd *exec.Cmd
 	var parser func(string) []RouteEntry

@@ -8,20 +8,22 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-// LinuxRouteProvider는 Linux netlink를 사용하는 RouteProvider 구현입니다
+// LinuxRouteProvider is a RouteProvider implementation using Linux netlink.
 type LinuxRouteProvider struct{}
 
-// NewLinuxRouteProvider는 새로운 LinuxRouteProvider를 생성합니다
+// NewLinuxRouteProvider creates a new LinuxRouteProvider instance.
 func NewLinuxRouteProvider() *LinuxRouteProvider {
 	return &LinuxRouteProvider{}
 }
 
-// NewRouteProvider는 현재 OS에 맞는 RouteProvider를 반환합니다
+// NewRouteProvider returns a RouteProvider implementation for the current OS.
+// On Linux, it returns a LinuxRouteProvider.
 func NewRouteProvider() RouteProvider {
 	return NewLinuxRouteProvider()
 }
 
-// GetRoutes는 netlink를 통해 라우팅 테이블을 조회합니다
+// GetRoutes retrieves the routing table using netlink.
+// Returns a slice of RouteEntry and an error if the operation fails.
 func (p *LinuxRouteProvider) GetRoutes() ([]RouteEntry, error) {
 	// IPv4 라우트만 조회
 	routes, err := netlink.RouteList(nil, netlink.FAMILY_V4)

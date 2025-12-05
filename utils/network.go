@@ -7,23 +7,26 @@ import (
 	"github.com/shirou/gopsutil/v3/process"
 )
 
-// ConnectionType 상수
+// ConnectionType represents a network connection type.
+type ConnectionType uint32
+
 const (
+	// TCP represents a TCP connection
 	TCP ConnectionType = 1
+	// UDP represents a UDP connection
 	UDP ConnectionType = 2
 )
 
-type ConnectionType uint32
-
-// ProcessInfo는 프로세스 정보를 담는 구조체
+// ProcessInfo contains process information including name, username, CPU and memory usage.
 type ProcessInfo struct {
-	Name       string
-	Username   string
-	CPUPercent string
-	MemPercent string
+	Name       string // Process name
+	Username   string // Username running the process
+	CPUPercent string // CPU usage percentage as a formatted string
+	MemPercent string // Memory usage percentage as a formatted string
 }
 
-// ConnectionTypeToString 연결 타입을 문자열로 변환
+// ConnectionTypeToString converts a connection type to its string representation.
+// It returns "TCP", "UDP", or "UNKNOWN" based on the connection type.
 func ConnectionTypeToString(connType uint32) string {
 	switch ConnectionType(connType) {
 	case TCP:
@@ -35,13 +38,14 @@ func ConnectionTypeToString(connType uint32) string {
 	}
 }
 
-// IsUDP 연결 타입이 UDP인지 확인
+// IsUDP checks if the connection type is UDP.
 func IsUDP(connType uint32) bool {
 	return ConnectionType(connType) == UDP
 }
 
-// FilterListeningConnections LISTEN 상태인 연결만 필터링
-// includeUDP가 true일 때만 UDP 연결을 포함합니다
+// FilterListeningConnections filters connections to only include listening connections.
+// If includeUDP is true, UDP connections are also included.
+// Returns a map keyed by connection type and port.
 func FilterListeningConnections(connections []net.ConnectionStat, includeUDP bool) map[string]net.ConnectionStat {
 	listeningConns := make(map[string]net.ConnectionStat)
 	for _, conn := range connections {
@@ -58,7 +62,10 @@ func FilterListeningConnections(connections []net.ConnectionStat, includeUDP boo
 	return listeningConns
 }
 
-// GetProcessInfo 프로세스 정보를 가져옴
+// GetProcessInfo retrieves process information for the given PID.
+// It returns a ProcessInfo struct with name, username, CPU and memory usage.
+// If the process cannot be found or accessed, it returns default values ("N/A").
+// This function silently handles errors to ensure it always returns a valid ProcessInfo.
 func GetProcessInfo(pid int32) ProcessInfo {
 	// 기본값 설정
 	info := ProcessInfo{
@@ -74,6 +81,7 @@ func GetProcessInfo(pid int32) ProcessInfo {
 
 	proc, err := process.NewProcess(pid)
 	if err != nil {
+		// Process not found or inaccessible, return default values
 		return info
 	}
 
