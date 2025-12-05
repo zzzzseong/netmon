@@ -6,7 +6,7 @@ import (
 
 // Version 정보
 const (
-	Version   = "1.2.2"
+	Version   = "1.3.0"
 	BuildDate = "2025-12-05"
 )
 

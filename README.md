@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.2.2-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Version](https://img.shields.io/badge/version-1.3.0-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/zzzzseong/netmon)
 
 *A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.*
@@ -36,10 +36,6 @@
   - Cross-platform support (traceroute/tracert)
   - Beautiful table format with color-coded RTT values
   - Real-time animated spinner during execution
-- **🔗 Active Connections** - Display all ESTABLISHED TCP connections
-  - Shows local and remote addresses
-  - Process information for each connection
-  - Sorted by remote address for easy scanning
 - **📊 Network Statistics** - View network statistics summary at a glance
   - Connection counts (TCP/UDP)
   - Listening ports count
@@ -88,7 +84,7 @@ The easiest way to install on Linux:
 curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash
 
 # Install specific version
-curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.2.2
+curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.3.0
 ```
 
 The script automatically:
@@ -270,26 +266,6 @@ netmon traceroute google.com
 
 ---
 
-### 🔗 View Active Connections
-
-Display all active ESTABLISHED TCP connections:
-
-```bash
-netmon conn
-```
-
-**Output:**
-```
-╭────────────┬───────────────────────────┬───────────────────────────┬────────────┬─────────────────────╮
-│  PROTOCOL  │      LOCAL ADDRESS        │      REMOTE ADDRESS       │    PID     │      PROCESS        │
-├────────────┼───────────────────────────┼───────────────────────────┼────────────┼─────────────────────┤
-│ TCP        │ 192.168.1.100:54321       │ 142.250.80.46:443         │ 12345      │ chrome              │
-│ TCP        │ 192.168.1.100:54322       │ 20.205.243.166:443        │ 23456      │ slack               │
-╰────────────┴───────────────────────────┴───────────────────────────┴────────────┴─────────────────────╯
-```
-
----
-
 ### 📊 View Network Statistics
 
 Display network statistics summary:
@@ -377,6 +353,7 @@ netmon find <pid|port>
 - If both match, both results are shown (duplicates removed)
 - If only one matches, only that result is displayed
 - Shows full command line (like `ps -ef`) for easy process identification
+- Displays active ports (LISTEN) and active connections (ESTABLISHED) for the found process
 
 **Examples:**
 
@@ -405,10 +382,13 @@ netmon find 8080
 │                                                 │
 │ Active Ports:                                   │
 │   • 127.0.0.1:8080 (TCP)                        │
+│                                                 │
+│ Active Connections:                             │
+│   • 127.0.0.1:8080 → 192.168.1.100:54321       │
 ╰──────────────────────────────────────────────────╯
 ```
 
-*Smart search that works with both PIDs and ports - no need to remember which is which!*
+*Smart search that works with both PIDs and ports - shows active ports and connections!*
 
 ---
 
@@ -457,7 +437,6 @@ Are you sure you want to shutdown this process?
 | `ls` | List all active ports with process metrics | `netmon ls` | `-a` (include UDP) |
 | `ip` | Show network interfaces | `netmon ip` | `-a` (show IPv6) |
 | `route` | Display routing table with smart filtering | `netmon route` | - |
-| `conn` | Show active ESTABLISHED connections | `netmon conn` | - |
 | `stats` | Display network statistics summary | `netmon stats` | - |
 | `dns` | Perform DNS lookup | `netmon dns <domain|ip>` | - |
 | `find` | Find process by PID or port (auto-detects) | `netmon find <pid|port>` | - |
@@ -470,8 +449,8 @@ Are you sure you want to shutdown this process?
 
 ## 🎯 Use Cases
 
-- 🔧 **Port Conflict Resolution** - Quickly find which process is using a port (smart PID/port search)
-- 📊 **Network Monitoring** - Monitor active network connections with real-time metrics
+- 🔧 **Port Conflict Resolution** - Quickly find which process is using a port (smart PID/port search with active connections)
+- 📊 **Network Monitoring** - Monitor network statistics and connections with real-time metrics
 - 🛡️ **Process Management** - Safely terminate processes with confirmation
 - 💻 **Development** - Check if your development server port is available
 - 🌐 **Network Debugging** - View network interfaces and routing information
@@ -479,15 +458,22 @@ Are you sure you want to shutdown this process?
 
 ---
 
-## 🆕 What's New in v1.2.2
+## 🆕 What's New in v1.3.0
 
-- 🔍 **Enhanced Find Command** - Smart search that automatically detects PID or port, shows full command line
-- 📋 **Automatic Port Sorting** - Port listings are now automatically sorted by port number
-- 🛑 **Improved Shutdown UI** - Better confirmation prompts and styled success/cancel messages
-- 🏗️ **Code Quality Improvements** - Following Go best practices with comprehensive documentation
-- 🧪 **Enhanced Testing** - Added test coverage for multiple packages including benchmarks
+- 📊 **Network Statistics Command** - Quick overview of network activity with connection counts, listening ports, and top processes
+- 🌐 **DNS Lookup Command** - Fast DNS lookups (forward and reverse) with response time measurement
+- 🔍 **Enhanced Find Command** - Now displays active connections for found processes
+- 🎨 **Enhanced Formatting** - Beautiful table layouts for all new commands
+- ⚡ **Performance Improvements** - Optimized connection filtering and DNS lookup performance
 
 ### Previous Releases
+
+**v1.2.2:**
+- 🔍 Enhanced Find Command - Smart search that automatically detects PID or port, shows full command line
+- 📋 Automatic Port Sorting - Port listings are now automatically sorted by port number
+- 🛑 Improved Shutdown UI - Better confirmation prompts and styled success/cancel messages
+- 🏗️ Code Quality Improvements - Following Go best practices with comprehensive documentation
+- 🧪 Enhanced Testing - Added test coverage for multiple packages including benchmarks
 
 **v1.2.1:**
 - 🎨 Custom Help Output Restored
