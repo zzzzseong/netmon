@@ -52,9 +52,10 @@ func newShutdownCmd() *cobra.Command {
 			connections = []net.ConnectionStat{}
 		}
 
-		// 포맷터를 사용하여 프로세스 정보 출력
+		// 포맷터를 사용하여 프로세스 정보 출력 (경고 헤더 포함)
 		fmtter := formatter.NewProcessInfoFormatter()
-		info := fmtter.Format("", pid, processName, status, connections)
+		header := fmt.Sprintf("⚠️  Shutdown Confirmation for PID %d", pid)
+		info := fmtter.Format(header, pid, processName, status, connections)
 		fmt.Println(info)
 
 		// 인터랙티브 확인 프롬프트
@@ -62,13 +63,23 @@ func newShutdownCmd() *cobra.Command {
 			Foreground(style.WarningColor).
 			Bold(true).
 			MarginTop(1).
-			Render("⚠️  Do you want to shutdown this process?")
+			Render("Are you sure you want to shutdown this process?")
 		fmt.Println(promptTitle)
 
+		// 커스텀 템플릿으로 ?: 제거
+		templates := &promptui.SelectTemplates{
+			Label:    "{{ . }}",
+			Active:   "▸ {{ . | cyan }}",
+			Inactive: "  {{ . }}",
+			Selected: "{{ . | green }}",
+		}
+
 		prompt := promptui.Select{
-			Label: "",
-			Items: []string{"Shutdown", "Cancel"},
-			Size:  2,
+			Label:     "",
+			Items:     []string{"✓ Yes, shutdown", "✗ No, cancel"},
+			Templates: templates,
+			Size:      2,
+			HideHelp:  true, // "Use the arrow keys" 도움말 숨기기
 		}
 
 		index, result, err := prompt.Run()
@@ -76,19 +87,31 @@ func newShutdownCmd() *cobra.Command {
 			return fmt.Errorf("prompt error: %w", err)
 		}
 
-		if index == 0 && result == "Shutdown" {
+		if index == 0 && result == "✓ Yes, shutdown" {
 			// 프로세스 종료
 			err = proc.Kill()
 			if err != nil {
 				return fmt.Errorf("failed to shutdown process: %w", err)
 			}
-			successMsg := style.SuccessStyle.Render(fmt.Sprintf("✓ Process %d (%s) has been successfully shut down.", pid, processName))
-			fmt.Printf("\n%s\n", successMsg)
+			
+			// 성공 메시지 박스
+			successBox := lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(style.SuccessColor).
+				Padding(1, 2).
+				Foreground(style.SuccessColor).
+				Bold(true).
+				Render(fmt.Sprintf("✓ Process %d (%s) has been successfully shut down.", pid, processName))
+			fmt.Printf("\n%s\n", successBox)
 		} else {
-			cancelMsg := lipgloss.NewStyle().
+			// 취소 메시지 박스
+			cancelBox := lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(style.SubtleColor).
+				Padding(1, 2).
 				Foreground(style.SubtleColor).
-				Render("Cancelled.")
-			fmt.Printf("\n%s\n", cancelMsg)
+				Render("✗ Shutdown cancelled.")
+			fmt.Printf("\n%s\n", cancelBox)
 		}
 
 		return nil
