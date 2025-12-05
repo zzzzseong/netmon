@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.2.1-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Version](https://img.shields.io/badge/version-1.2.2-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/zzzzseong/netmon)
 
 *A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.*
@@ -38,7 +38,10 @@
   - Real-time animated spinner during execution
 
 ### 🔍 Process Management
-- **Port Search** - Find processes using specific ports (like `lsof -i :port`)
+- **Smart Process Search** - Find processes by PID or port with automatic detection
+  - Provide a number to search by both PID and port simultaneously
+  - Shows full command line (like `ps -ef`) for easy identification
+  - Displays all active ports used by the process
 - **Process Shutdown** - Safely terminate processes with interactive confirmation
 - **Real-time Metrics** - Monitor CPU and memory usage per process
 
@@ -46,6 +49,7 @@
 - **Beautiful UI** - Modern terminal interface with color-coded output
 - **Center-aligned Headers** - Clean, organized table layouts
 - **Optimized Columns** - Compact display for better terminal compatibility
+- **Automatic Sorting** - Port listings sorted by port number for easy scanning
 - **Shell Completion** - Tab completion support for Bash, Zsh, and Fish
 - **Fast & Lightweight** - Built with Go for optimal performance
 
@@ -68,7 +72,7 @@ The easiest way to install on Linux:
 curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash
 
 # Install specific version
-curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.2.1
+curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.2.2
 ```
 
 The script automatically:
@@ -250,37 +254,51 @@ netmon traceroute google.com
 
 ---
 
-### 🔍 Find Process by Port
+### 🔍 Find Process by PID or Port
 
-Find which process is using a specific port or PID:
+Find processes using a smart search that automatically detects PID or port:
 
 ```bash
 netmon find <pid|port>
 ```
 
-**Example:**
+**How it works:**
+- Provide a number, and `find` automatically searches by both PID and port
+- If both match, both results are shown (duplicates removed)
+- If only one matches, only that result is displayed
+- Shows full command line (like `ps -ef`) for easy process identification
+
+**Examples:**
+
 ```bash
+# Search by port 8080
+netmon find 8080
+
+# Search by PID 8922
+netmon find 8922
+
+# If PID 8080 exists AND port 8080 is in use, both results shown
 netmon find 8080
 ```
 
 **Output:**
 ```
+🔍 Found by Port: 8080
+
 ╭──────────────────────────────────────────────────╮
-│                                                  │
-│  🔍 Found by Port: 8080                          │
-│                                                  │
-│  PID:        12345                               │
-│  Name:       node                                │
-│  Status:     [sleep]                             │
-│                                                  │
-│  Active Ports:                                   │
-│      • 127.0.0.1:8080 (TCP)                      │
-│                                                  │
-│                                                  │
+│ PID:        12345                               │
+│ Name:       node                                │
+│ Status:     [sleep]                             │
+│                                                 │
+│ Command:                                        │
+│   /usr/bin/node /path/to/server.js              │
+│                                                 │
+│ Active Ports:                                   │
+│   • 127.0.0.1:8080 (TCP)                        │
 ╰──────────────────────────────────────────────────╯
 ```
 
-*Equivalent to `lsof -i :8080` but with beautiful formatting. Also accepts PID to show all ports used by a process.*
+*Smart search that works with both PIDs and ports - no need to remember which is which!*
 
 ---
 
@@ -304,7 +322,8 @@ The command will:
 
 **Interactive Prompt:**
 ```
-⚙️  Process Information
+⚠️  Shutdown Confirmation for PID 12345
+
 ╭─────────────────────────────────────╮
 │ PID:        12345                   │
 │ Name:       nginx                   │
@@ -314,8 +333,9 @@ The command will:
 │   • 0.0.0.0:8080 (TCP)             │
 ╰─────────────────────────────────────╯
 
-⚠️  Do you want to shutdown this process?
-[Shutdown/Cancel]
+Are you sure you want to shutdown this process?
+▸ ✓ Yes, shutdown
+  ✗ No, cancel
 ```
 
 ---
@@ -327,7 +347,7 @@ The command will:
 | `ls` | List all active ports with process metrics | `netmon ls` | `-a` (include UDP) |
 | `ip` | Show network interfaces | `netmon ip` | `-a` (show IPv6) |
 | `route` | Display routing table with smart filtering | `netmon route` | - |
-| `find` | Find process by PID or port | `netmon find <pid|port>` | - |
+| `find` | Find process by PID or port (auto-detects) | `netmon find <pid|port>` | - |
 | `shutdown` | Shutdown a process | `netmon shutdown <pid>` | - |
 | `traceroute` | Trace route to network host | `netmon traceroute <host>` | - |
 | `version` | Show version information | `netmon version` | - |
@@ -337,7 +357,7 @@ The command will:
 
 ## 🎯 Use Cases
 
-- 🔧 **Port Conflict Resolution** - Quickly find which process is using a port
+- 🔧 **Port Conflict Resolution** - Quickly find which process is using a port (smart PID/port search)
 - 📊 **Network Monitoring** - Monitor active network connections with real-time metrics
 - 🛡️ **Process Management** - Safely terminate processes with confirmation
 - 💻 **Development** - Check if your development server port is available
@@ -346,11 +366,20 @@ The command will:
 
 ---
 
-## 🆕 What's New in v1.2.1
+## 🆕 What's New in v1.2.2
 
-- 🎨 **Custom Help Output Restored** - Beautiful styled help output restored and extracted to separate file for better code organization
-- 🧹 **Completion Command Cleanup** - Removed completion command from help output using Cobra's official API
-- 📁 **Code Organization** - Help rendering logic moved to `cmd/help.go` for better maintainability
+- 🔍 **Enhanced Find Command** - Smart search that automatically detects PID or port, shows full command line
+- 📋 **Automatic Port Sorting** - Port listings are now automatically sorted by port number
+- 🛑 **Improved Shutdown UI** - Better confirmation prompts and styled success/cancel messages
+- 🏗️ **Code Quality Improvements** - Following Go best practices with comprehensive documentation
+- 🧪 **Enhanced Testing** - Added test coverage for multiple packages including benchmarks
+
+### Previous Releases
+
+**v1.2.1:**
+- 🎨 Custom Help Output Restored
+- 🧹 Completion Command Cleanup
+- 📁 Code Organization improvements
 
 ### Shell Completion
 
