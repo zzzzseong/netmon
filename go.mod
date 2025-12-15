@@ -6,9 +6,10 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/shirou/gopsutil/v3 v3.24.5
+	github.com/spf13/cobra v1.10.1
 	github.com/vishvananda/netlink v1.3.1
-	golang.org/x/net v0.47.0
-	golang.org/x/sys v0.38.0
+	golang.org/x/net v0.48.0
+	golang.org/x/sys v0.39.0
 )
 
 require (
@@ -28,7 +29,6 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
-	github.com/spf13/cobra v1.10.1 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
