@@ -35,6 +35,11 @@ func newDNSCmd() *cobra.Command {
 				result = utils.LookupDomain(query)
 			}
 
+			// Check for DNS lookup errors
+			if result.Error != nil {
+				return fmt.Errorf("DNS lookup failed: %w", result.Error)
+			}
+
 			// Format and display results
 			fmtter := formatter.NewDNSFormatter()
 			output := fmtter.Format(result)

@@ -26,13 +26,18 @@ Provide a number to search by both PID and port.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			input := args[0]
 
-			// 숫자인지 확인
-			_, err := strconv.Atoi(input)
+			// Check if input is a number
+			num, err := strconv.Atoi(input)
 			if err != nil {
 				return fmt.Errorf("invalid input: %s (must be a number for PID or port)", input)
 			}
 
-			// FindByInput으로 자동 검색 (숫자만 허용)
+			// Validate PID/port range
+			if num <= 0 {
+				return fmt.Errorf("invalid input: %d (must be greater than 0)", num)
+			}
+
+			// Auto-search using FindByInput (numbers only)
 			results, err := utils.FindByInput(input)
 			if err != nil {
 				noResultMsg := lipgloss.NewStyle().
@@ -43,10 +48,10 @@ Provide a number to search by both PID and port.`,
 				return nil
 			}
 
-			// 각 결과를 포맷팅하여 출력
+			// Format and display each result
 			fmtter := formatter.NewProcessInfoFormatter()
 			for _, result := range results {
-				// 프로세스 상태 정보 가져오기
+				// Get process status information
 				proc, err := process.NewProcess(result.PID)
 				var status []string
 				if err == nil {
@@ -56,7 +61,7 @@ Provide a number to search by both PID and port.`,
 					status = []string{"N/A"}
 				}
 
-				// 결과 타입에 따라 메시지 추가
+				// Add message based on result type
 				var typeLabel string
 				switch result.Type {
 				case "pid":
@@ -65,7 +70,7 @@ Provide a number to search by both PID and port.`,
 					typeLabel = fmt.Sprintf("Found by Port: %d", result.Port)
 				}
 
-				// 프로세스 정보 출력 (헤더 포함)
+				// Display process information (with header)
 				info := fmtter.Format(
 					typeLabel,
 					int(result.PID),

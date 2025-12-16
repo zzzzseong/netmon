@@ -28,37 +28,42 @@ func newShutdownCmd() *cobra.Command {
 			return fmt.Errorf("invalid PID: %s", pidStr)
 		}
 
-		// 프로세스 정보 가져오기
+		// Validate PID is positive
+		if pid <= 0 {
+			return fmt.Errorf("invalid PID: %d (PID must be greater than 0)", pid)
+		}
+
+		// Get process information
 		proc, err := process.NewProcess(int32(pid))
 		if err != nil {
 			return fmt.Errorf("process with PID %d not found: %w", pid, err)
 		}
 
-		// 프로세스 이름 가져오기
+		// Get process name
 		processName, err := proc.Name()
 		if err != nil {
 			processName = "N/A"
 		}
 
-		// 프로세스 상태 정보 가져오기
+		// Get process status information
 		status, err := proc.Status()
 		if err != nil {
 			status = []string{"N/A"}
 		}
 
-		// 프로세스가 사용하는 포트 가져오기
+		// Get ports used by the process
 		connections, err := net.ConnectionsPid("inet", int32(pid))
 		if err != nil {
 			connections = []net.ConnectionStat{}
 		}
 
-		// 포맷터를 사용하여 프로세스 정보 출력 (경고 헤더 포함)
+		// Format and display process information (with warning header)
 		fmtter := formatter.NewProcessInfoFormatter()
 		header := fmt.Sprintf("⚠️  Shutdown Confirmation for PID %d", pid)
 		info := fmtter.Format(header, pid, processName, status, connections)
 		fmt.Println(info)
 
-		// 인터랙티브 확인 프롬프트
+		// Interactive confirmation prompt
 		promptTitle := lipgloss.NewStyle().
 			Foreground(style.WarningColor).
 			Bold(true).
@@ -66,7 +71,7 @@ func newShutdownCmd() *cobra.Command {
 			Render("Are you sure you want to shutdown this process?")
 		fmt.Println(promptTitle)
 
-		// 커스텀 템플릿으로 ?: 제거
+		// Custom template to remove ?: prompt
 		templates := &promptui.SelectTemplates{
 			Label:    "{{ . }}",
 			Active:   "▸ {{ . | cyan }}",
@@ -79,7 +84,7 @@ func newShutdownCmd() *cobra.Command {
 			Items:     []string{"✓ Yes, shutdown", "✗ No, cancel"},
 			Templates: templates,
 			Size:      2,
-			HideHelp:  true, // "Use the arrow keys" 도움말 숨기기
+			HideHelp:  true, // Hide "Use the arrow keys" help message
 		}
 
 		index, result, err := prompt.Run()
@@ -88,13 +93,13 @@ func newShutdownCmd() *cobra.Command {
 		}
 
 		if index == 0 && result == "✓ Yes, shutdown" {
-			// 프로세스 종료
+			// Terminate the process
 			err = proc.Kill()
 			if err != nil {
 				return fmt.Errorf("failed to shutdown process: %w", err)
 			}
 			
-			// 성공 메시지 박스
+			// Success message box
 			successBox := lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder()).
 				BorderForeground(style.SuccessColor).
@@ -104,7 +109,7 @@ func newShutdownCmd() *cobra.Command {
 				Render(fmt.Sprintf("✓ Process %d (%s) has been successfully shut down.", pid, processName))
 			fmt.Printf("\n%s\n", successBox)
 		} else {
-			// 취소 메시지 박스
+			// Cancel message box
 			cancelBox := lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder()).
 				BorderForeground(style.SubtleColor).

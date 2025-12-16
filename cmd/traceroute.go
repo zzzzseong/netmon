@@ -2,16 +2,21 @@ package cmd
 
 import (
 	"bufio"
+	"context"
 	"fmt"
+	"os"
 	"os/exec"
+	"os/signal"
 	"runtime"
 	"strconv"
+	"syscall"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	"netmon/formatter"
 	"netmon/parser"
 	"netmon/style"
+	"netmon/utils"
 )
 
 const (
@@ -34,7 +39,12 @@ func newTracerouteCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			target := args[0]
 
-			// 헤더 출력
+			// Validate input: hostname or IP address
+			if err := utils.ValidateHostname(target); err != nil {
+				return fmt.Errorf("invalid hostname or IP address: %w", err)
+			}
+
+			// Print header
 			header := fmt.Sprintf("Tracing route to %s", target)
 			headerStyle := lipgloss.NewStyle().
 				Foreground(style.PrimaryColor).
@@ -42,14 +52,14 @@ func newTracerouteCmd() *cobra.Command {
 			fmt.Println(headerStyle.Render(header))
 			fmt.Println()
 
-			// 포맷터와 파서 생성
+			// Create formatter and parser
 			fmtter := formatter.NewTracerouteFormatter()
 			parser := parser.NewTracerouteParser()
 
-			// 테이블 헤더 출력
+			// Print table header
 			fmtter.PrintTableHeader()
 
-			// 실시간으로 traceroute 실행 및 출력
+			// Execute traceroute in real-time with cancellation support
 			err := executeTracerouteStreaming(target, parser)
 			if err != nil {
 				return err
@@ -62,6 +72,7 @@ func newTracerouteCmd() *cobra.Command {
 }
 
 // executeTracerouteStreaming executes traceroute in real-time and streams the output.
+// It handles signal cancellation (Ctrl+C) to properly terminate the traceroute process.
 func executeTracerouteStreaming(target string, parser *parser.TracerouteParser) error {
 	var cmd *exec.Cmd
 	var cmdName string
@@ -78,40 +89,72 @@ func executeTracerouteStreaming(target string, parser *parser.TracerouteParser) 
 		cmd = exec.Command("traceroute", "-n", "-w", timeoutStr, "-q", probeStr, target)
 	}
 
-	// 명령어가 PATH에 있는지 확인
+	// Check if command exists in PATH
 	if _, err := exec.LookPath(cmdName); err != nil {
-		// OS별 설치 안내 메시지 출력
+		// Print OS-specific installation instructions
 		installMsg := getTracerouteInstallMessage()
 		return fmt.Errorf("%s command not found in PATH\n%s", cmdName, installMsg)
 	}
 
-	// stdout 파이프 생성
+	// Create stdout pipe
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("failed to create pipe: %w", err)
 	}
+	// Ensure pipe is closed for resource management
+	defer stdout.Close()
 
-	// 명령 시작
+	// Start command
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start traceroute: %w", err)
 	}
 
-	// 실시간으로 출력 읽기 및 파싱
-	scanner := bufio.NewScanner(stdout)
+	// Set up signal handling for graceful cancellation
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	if runtime.GOOS == "windows" {
-		parser.ParseWindowsTracert(scanner)
-	} else {
-		parser.ParseUnixTraceroute(scanner)
-	}
+	// Channel to receive signals
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	// 프로세스 종료 대기
-	if err := cmd.Wait(); err != nil {
-		// 부분적인 결과가 출력되었을 수 있으므로 에러를 무시
+	// Goroutine to handle cancellation
+	done := make(chan error, 1)
+	go func() {
+		// Read and parse output in real-time
+		scanner := bufio.NewScanner(stdout)
+
+		if runtime.GOOS == "windows" {
+			parser.ParseWindowsTracert(scanner)
+		} else {
+			parser.ParseUnixTraceroute(scanner)
+		}
+
+		// Wait for process to finish
+		done <- cmd.Wait()
+	}()
+
+	// Wait for either completion or cancellation
+	select {
+	case <-ctx.Done():
+		// Context cancelled
+		cmd.Process.Kill()
+		return fmt.Errorf("traceroute cancelled")
+	case sig := <-sigChan:
+		// Signal received (Ctrl+C)
+		fmt.Fprintf(os.Stderr, "\nReceived signal: %v. Terminating traceroute...\n", sig)
+		cmd.Process.Kill()
+		<-done // Wait for cleanup
+		return fmt.Errorf("traceroute interrupted")
+	case err := <-done:
+		// Process completed
+		if err != nil {
+			// Partial results may have been displayed, but log the error
+			// Return nil so user can see partial results, but log error information
+			fmt.Fprintf(os.Stderr, "Warning: traceroute command exited with error: %v\n", err)
+			return nil
+		}
 		return nil
 	}
-
-	return nil
 }
 
 // getTracerouteInstallMessage returns OS-specific installation instructions for traceroute.

@@ -17,25 +17,25 @@ func newLsCmd() *cobra.Command {
 		Short: "List active ports (-a: include UDP)",
 		Long:  `Display all active listening ports with detailed process information.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// -a 옵션 값 가져오기
+			// Get -a option value
 			includeUDP, _ := cmd.Flags().GetBool("all")
 
-			// 포맷터 생성
+			// Create formatter
 			fmtter := formatter.NewPortTableFormatter()
 
-			// 모든 네트워크 연결 가져오기
+			// Get all network connections
 			connections, err := net.Connections("inet")
 			if err != nil {
 				return fmt.Errorf("failed to get network connection information: %w", err)
 			}
 
-			// LISTEN 상태인 연결만 필터링 (-a 옵션이 있을 때만 UDP 포함)
+			// Filter only LISTEN connections (include UDP only if -a option is set)
 			listeningConns := utils.FilterListeningConnections(connections, includeUDP)
 
-			// 포트 번호로 정렬
+			// Sort by port number
 			sortedConns := utils.SortConnectionsByPort(listeningConns)
 
-			// 포맷터를 사용하여 테이블 생성
+			// Create table using formatter
 			table := fmtter.Format(sortedConns)
 			fmt.Println(table)
 
@@ -43,7 +43,7 @@ func newLsCmd() *cobra.Command {
 		},
 	}
 
-	// -a, --all 플래그 정의
+	// Define -a, --all flag
 	cmd.Flags().BoolP("all", "a", false, "Include UDP connections")
 
 	return cmd

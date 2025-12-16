@@ -11,18 +11,18 @@ import (
 
 // printCustomHelp prints a beautifully styled help message
 func printCustomHelp(cmd *cobra.Command, args []string, cfg Config) {
-	// Version 정보
+	// Version information
 	versionText := fmt.Sprintf("Version %s", cfg.Version)
 
 	// Description
 	descText := "A powerful CLI tool for monitoring network connections and managing processes."
 
-	// ASCII Art 출력
+	// Print ASCII Art
 	fmt.Print(style.ASCIIStyle.Render(style.ASCIIArt))
 	fmt.Println(style.VersionTextStyle.Render(versionText))
 	fmt.Println(style.DescTextStyle.Render(descText))
 
-	// Usage 섹션
+	// Usage section
 	usageHeader := lipgloss.NewStyle().
 		Foreground(style.PrimaryColor).
 		Bold(true).
@@ -30,7 +30,7 @@ func printCustomHelp(cmd *cobra.Command, args []string, cfg Config) {
 		Render("Usage:")
 	fmt.Println(usageHeader)
 
-	// Usage 내용 박스
+	// Usage content box
 	usageContent := "netmon <command> [arguments]"
 	usageBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
@@ -44,7 +44,7 @@ func printCustomHelp(cmd *cobra.Command, args []string, cfg Config) {
 		)
 	fmt.Println(usageBox)
 
-	// Commands 섹션
+	// Commands section
 	commandsHeader := lipgloss.NewStyle().
 		Foreground(style.SecondaryColor).
 		Bold(true).
@@ -52,16 +52,16 @@ func printCustomHelp(cmd *cobra.Command, args []string, cfg Config) {
 		Render("Commands:")
 	fmt.Println(commandsHeader)
 
-	// 명령어 목록 수집
+	// Collect command list
 	var commands []*cobra.Command
 	for _, c := range cmd.Commands() {
-		// completion과 help 명령어는 제외
+		// Exclude completion and help commands
 		if c.Name() != "completion" && c.Name() != "help" {
 			commands = append(commands, c)
 		}
 	}
 
-	// 가장 긴 명령어 길이 계산
+	// Calculate longest command length
 	maxUsageLen := 0
 	for _, c := range commands {
 		usageLen := len(fmt.Sprintf("  netmon %s", c.Use))
@@ -70,11 +70,11 @@ func printCustomHelp(cmd *cobra.Command, args []string, cfg Config) {
 		}
 	}
 
-	// 명령어 목록 생성
+	// Create command list
 	var commandsList strings.Builder
 	for i, c := range commands {
 		usage := fmt.Sprintf("  netmon %s", c.Use)
-		// 패딩 추가
+		// Add padding
 		padding := maxUsageLen - len(usage) + 4
 		usage += strings.Repeat(" ", padding)
 

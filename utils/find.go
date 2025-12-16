@@ -32,13 +32,13 @@ func FindByPID(pid int32) (*FindResult, error) {
 		return nil, fmt.Errorf("process with PID %d not found: %w", pid, err)
 	}
 
-	// 프로세스가 사용하는 포트 가져오기
+	// Get ports used by the process
 	connections, err := net.ConnectionsPid("inet", pid)
 	if err != nil {
 		connections = []net.ConnectionStat{}
 	}
 
-	// LISTEN 상태와 ESTABLISHED 상태 연결 분리
+	// Separate LISTEN and ESTABLISHED connections
 	listeningConns := make([]net.ConnectionStat, 0)
 	establishedConns := make([]net.ConnectionStat, 0)
 	
@@ -50,7 +50,7 @@ func FindByPID(pid int32) (*FindResult, error) {
 		}
 	}
 
-	// LISTEN 연결을 먼저, ESTABLISHED 연결을 나중에 추가
+	// Add LISTEN connections first, then ESTABLISHED connections
 	allConns := append(listeningConns, establishedConns...)
 
 	processInfo := GetProcessInfo(pid)
@@ -70,33 +70,33 @@ func FindByPort(port int) ([]*FindResult, error) {
 		return nil, fmt.Errorf("port number must be between %d and %d", minPort, maxPort)
 	}
 
-	// 모든 네트워크 연결 가져오기
+	// Get all network connections
 	connections, err := net.Connections("inet")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get network connection information: %w", err)
 	}
 
-	// 해당 포트를 LISTEN하고 있는 PID 찾기
+	// Find PIDs listening on the specified port
 	pidSet := make(map[int32]bool)
 
 	for _, conn := range connections {
-		// LISTEN 상태 또는 UDP이면서 포트가 일치하는 경우
+		// Match LISTEN status or UDP with matching port
 		isListening := conn.Status == "LISTEN" || (IsUDP(conn.Type) && conn.Laddr.Port > 0)
 		if isListening && conn.Laddr.Port == uint32(port) {
 			pidSet[int32(conn.Pid)] = true
 		}
 	}
 
-	// 찾은 PID들의 모든 연결 정보 가져오기 (LISTEN + ESTABLISHED)
+	// Get all connection information for found PIDs (LISTEN + ESTABLISHED)
 	results := make([]*FindResult, 0, len(pidSet))
 	for pid := range pidSet {
-		// 해당 PID의 모든 연결 가져오기
+		// Get all connections for this PID
 		pidConnections, err := net.ConnectionsPid("inet", pid)
 		if err != nil {
 			pidConnections = []net.ConnectionStat{}
 		}
 
-		// LISTEN과 ESTABLISHED 분리
+		// Separate LISTEN and ESTABLISHED
 		listeningConns := make([]net.ConnectionStat, 0)
 		establishedConns := make([]net.ConnectionStat, 0)
 
@@ -108,7 +108,7 @@ func FindByPort(port int) ([]*FindResult, error) {
 			}
 		}
 
-		// LISTEN 먼저, ESTABLISHED 나중에
+		// LISTEN first, ESTABLISHED later
 		allConns := append(listeningConns, establishedConns...)
 
 		processInfo := GetProcessInfo(pid)
@@ -132,7 +132,7 @@ func FindByProcessName(name string) ([]*FindResult, error) {
 		return nil, fmt.Errorf("process name cannot be empty")
 	}
 
-	// 모든 프로세스 가져오기
+	// Get all processes
 	pids, err := process.Pids()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get process list: %w", err)
@@ -144,31 +144,31 @@ func FindByProcessName(name string) ([]*FindResult, error) {
 	for _, pid := range pids {
 		proc, err := process.NewProcess(pid)
 		if err != nil {
-			continue // 프로세스에 접근할 수 없으면 건너뛰기
+			continue // Skip if process is not accessible
 		}
 
-		// 프로세스 이름 가져오기
+		// Get process name
 		procName, err := proc.Name()
 		if err != nil {
 			continue
 		}
 
-		// 명령어 라인 가져오기
+		// Get command line
 		cmdline, _ := proc.Cmdline()
 		cmdlineLower := strings.ToLower(cmdline)
 
-		// 프로세스 이름 또는 명령어 라인에서 부분 일치 검색 (대소문자 무시)
+		// Search for partial match in process name or command line (case-insensitive)
 		matched := strings.Contains(strings.ToLower(procName), nameLower) ||
 			(cmdline != "" && strings.Contains(cmdlineLower, nameLower))
 
 		if matched {
-			// 프로세스가 사용하는 포트 가져오기
+			// Get ports used by the process
 			connections, err := net.ConnectionsPid("inet", pid)
 			if err != nil {
 				connections = []net.ConnectionStat{}
 			}
 
-			// LISTEN과 ESTABLISHED 분리
+			// Separate LISTEN and ESTABLISHED
 			listeningConns := make([]net.ConnectionStat, 0)
 			establishedConns := make([]net.ConnectionStat, 0)
 			
@@ -180,7 +180,7 @@ func FindByProcessName(name string) ([]*FindResult, error) {
 				}
 			}
 
-			// LISTEN 먼저, ESTABLISHED 나중에
+			// LISTEN first, ESTABLISHED later
 			allConns := append(listeningConns, establishedConns...)
 
 			processInfo := GetProcessInfo(pid)
@@ -201,19 +201,19 @@ func FindByProcessName(name string) ([]*FindResult, error) {
 // If input is a number, searches by both PID and port.
 // If input is a string, searches by process name.
 func FindByInput(input string) ([]*FindResult, error) {
-	// 숫자인지 확인
+	// Check if input is a number
 	if num, err := strconv.Atoi(input); err == nil {
-		// 숫자면 PID와 포트 둘 다 검색
+		// If number, search by both PID and port
 		results := make([]*FindResult, 0)
-		pidSet := make(map[int32]bool) // 중복 제거를 위한 PID 집합
+		pidSet := make(map[int32]bool) // PID set for deduplication
 
-		// PID로 검색
+		// Search by PID
 		if pidResult, err := FindByPID(int32(num)); err == nil {
 			results = append(results, pidResult)
 			pidSet[pidResult.PID] = true
 		}
 
-		// 포트로 검색 (PID로 이미 찾은 것은 제외)
+		// Search by port (exclude already found by PID)
 		if portResults, err := FindByPort(num); err == nil {
 			for _, portResult := range portResults {
 				if !pidSet[portResult.PID] {
@@ -230,7 +230,7 @@ func FindByInput(input string) ([]*FindResult, error) {
 		return results, nil
 	}
 
-	// 문자열이면 프로세스 이름으로 검색
+	// If string, search by process name
 	return FindByProcessName(input)
 }
 

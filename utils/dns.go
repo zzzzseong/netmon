@@ -1,9 +1,15 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"time"
+)
+
+const (
+	// DefaultDNSTimeout is the default timeout for DNS lookups
+	DefaultDNSTimeout = 5 * time.Second
 )
 
 // DNSResult contains DNS lookup results.
@@ -27,12 +33,25 @@ func LookupDomain(domain string) DNSResult {
 
 	startTime := time.Now()
 
-	// Lookup IP addresses (both IPv4 and IPv6)
-	ips, err := net.LookupIP(domain)
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultDNSTimeout)
+	defer cancel()
+
+	// Create resolver with timeout
+	resolver := &net.Resolver{
+		PreferGo: true,
+	}
+
+	// Lookup IP addresses (both IPv4 and IPv6) with timeout
+	ips, err := resolver.LookupIP(ctx, "ip", domain)
 	result.ResponseTime = time.Since(startTime)
 
 	if err != nil {
-		result.Error = err
+		if ctx.Err() == context.DeadlineExceeded {
+			result.Error = fmt.Errorf("DNS lookup timeout: %w", err)
+		} else {
+			result.Error = err
+		}
 		return result
 	}
 
@@ -60,12 +79,25 @@ func ReverseLookup(ipAddr string) DNSResult {
 
 	startTime := time.Now()
 
-	// Perform reverse lookup
-	names, err := net.LookupAddr(ipAddr)
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultDNSTimeout)
+	defer cancel()
+
+	// Create resolver with timeout
+	resolver := &net.Resolver{
+		PreferGo: true,
+	}
+
+	// Perform reverse lookup with timeout
+	names, err := resolver.LookupAddr(ctx, ipAddr)
 	result.ResponseTime = time.Since(startTime)
 
 	if err != nil {
-		result.Error = err
+		if ctx.Err() == context.DeadlineExceeded {
+			result.Error = fmt.Errorf("DNS reverse lookup timeout: %w", err)
+		} else {
+			result.Error = err
+		}
 		return result
 	}
 
@@ -88,5 +120,44 @@ func ValidateDomain(domain string) error {
 	if len(domain) > 253 {
 		return fmt.Errorf("domain name too long (max 253 characters)")
 	}
+	
+	// Check for invalid characters
+	for _, char := range domain {
+		if !((char >= 'a' && char <= 'z') ||
+			(char >= 'A' && char <= 'Z') ||
+			(char >= '0' && char <= '9') ||
+			char == '.' || char == '-') {
+			return fmt.Errorf("domain contains invalid character: %c", char)
+		}
+	}
+	
+	// Check that domain doesn't start or end with dot or hyphen
+	if domain[0] == '.' || domain[0] == '-' || domain[len(domain)-1] == '.' || domain[len(domain)-1] == '-' {
+		return fmt.Errorf("domain cannot start or end with dot or hyphen")
+	}
+	
+	// Check for consecutive dots
+	for i := 0; i < len(domain)-1; i++ {
+		if domain[i] == '.' && domain[i+1] == '.' {
+			return fmt.Errorf("domain cannot contain consecutive dots")
+		}
+	}
+	
 	return nil
+}
+
+// ValidateHostname validates a hostname or IP address for use in network commands.
+// Returns an error if the hostname is invalid.
+func ValidateHostname(hostname string) error {
+	if hostname == "" {
+		return fmt.Errorf("hostname cannot be empty")
+	}
+	
+	// Check if it's a valid IP address
+	if IsIPAddress(hostname) {
+		return nil
+	}
+	
+	// Validate as domain name
+	return ValidateDomain(hostname)
 }

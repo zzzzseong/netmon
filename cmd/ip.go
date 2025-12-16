@@ -17,21 +17,21 @@ func newIPCmd() *cobra.Command {
 		Short: "Show network interfaces (-a: include IPv6)",
 		Long:  `Display network interfaces with IP addresses.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// -a 플래그 확인
+			// Check -a flag
 			showAll, _ := cmd.Flags().GetBool("all")
 
-			// 네트워크 인터페이스 정보 가져오기
+			// Get network interface information
 			interfaces, err := net.Interfaces()
 			if err != nil {
 				return fmt.Errorf("failed to get network interface information: %w", err)
 			}
 
-			// 인터페이스 이름으로 정렬
+			// Sort by interface name
 			sort.Slice(interfaces, func(i, j int) bool {
 				return interfaces[i].Name < interfaces[j].Name
 			})
 
-			// 포맷터를 사용하여 테이블 생성
+			// Create table using formatter
 			fmtter := formatter.NewInterfaceTableFormatter()
 			table := fmtter.Format(interfaces, showAll)
 			fmt.Println(table)
@@ -40,7 +40,7 @@ func newIPCmd() *cobra.Command {
 		},
 	}
 
-	// -a, --all 플래그 정의
+	// Define -a, --all flag
 	cmd.Flags().BoolP("all", "a", false, "Show all addresses including IPv6")
 
 	return cmd
