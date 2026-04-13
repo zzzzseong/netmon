@@ -8,8 +8,8 @@ require (
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/spf13/cobra v1.10.1
 	github.com/vishvananda/netlink v1.3.1
-	golang.org/x/net v0.49.0
-	golang.org/x/sys v0.41.0
+	golang.org/x/net v0.53.0
+	golang.org/x/sys v0.43.0
 )
 
 require (
