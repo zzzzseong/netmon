@@ -12,7 +12,7 @@ func newRootCmd(cfg Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "netmon",
 		Short: "A modern, beautiful CLI tool for network monitoring and process management",
-		Long: `A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.`,
+		Long:  `A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			// No arguments provided, show help
 			printCustomHelp(cmd, args, cfg)
@@ -32,6 +32,7 @@ func newRootCmd(cfg Config) *cobra.Command {
 	cmd.AddCommand(newShutdownCmd())
 	cmd.AddCommand(newStatsCmd())
 	cmd.AddCommand(newDNSCmd())
+	cmd.AddCommand(newConnCmd())
 	cmd.AddCommand(newVersionCmd(cfg))
 
 	return cmd

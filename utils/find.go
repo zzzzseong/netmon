@@ -16,13 +16,30 @@ const (
 	maxPort = 65535
 )
 
+// SeparateConnections separates connections into LISTEN and ESTABLISHED,
+// then returns them combined with LISTEN first.
+func SeparateConnections(connections []net.ConnectionStat) []net.ConnectionStat {
+	listeningConns := make([]net.ConnectionStat, 0)
+	establishedConns := make([]net.ConnectionStat, 0)
+
+	for _, conn := range connections {
+		if conn.Status == "LISTEN" || (IsUDP(conn.Type) && conn.Laddr.Port > 0) {
+			listeningConns = append(listeningConns, conn)
+		} else if conn.Status == "ESTABLISHED" {
+			establishedConns = append(establishedConns, conn)
+		}
+	}
+
+	return append(listeningConns, establishedConns...)
+}
+
 // FindResult represents a single find result (either by PID or by port)
 type FindResult struct {
-	Type        string              // "pid" or "port"
-	PID         int32               // Process ID
-	Port        uint32              // Port number (if found by port)
+	Type        string               // "pid" or "port"
+	PID         int32                // Process ID
+	Port        uint32               // Port number (if found by port)
 	Connections []net.ConnectionStat // Connections for this process/port
-	ProcessInfo ProcessInfo         // Process information
+	ProcessInfo ProcessInfo          // Process information
 }
 
 // FindByPID finds a process by PID and returns its information.
@@ -38,20 +55,8 @@ func FindByPID(pid int32) (*FindResult, error) {
 		connections = []net.ConnectionStat{}
 	}
 
-	// Separate LISTEN and ESTABLISHED connections
-	listeningConns := make([]net.ConnectionStat, 0)
-	establishedConns := make([]net.ConnectionStat, 0)
-	
-	for _, conn := range connections {
-		if conn.Status == "LISTEN" || (IsUDP(conn.Type) && conn.Laddr.Port > 0) {
-			listeningConns = append(listeningConns, conn)
-		} else if conn.Status == "ESTABLISHED" {
-			establishedConns = append(establishedConns, conn)
-		}
-	}
-
-	// Add LISTEN connections first, then ESTABLISHED connections
-	allConns := append(listeningConns, establishedConns...)
+	// Separate and order connections: LISTEN first, then ESTABLISHED
+	allConns := SeparateConnections(connections)
 
 	processInfo := GetProcessInfo(pid)
 
@@ -96,20 +101,8 @@ func FindByPort(port int) ([]*FindResult, error) {
 			pidConnections = []net.ConnectionStat{}
 		}
 
-		// Separate LISTEN and ESTABLISHED
-		listeningConns := make([]net.ConnectionStat, 0)
-		establishedConns := make([]net.ConnectionStat, 0)
-
-		for _, conn := range pidConnections {
-			if conn.Status == "LISTEN" || (IsUDP(conn.Type) && conn.Laddr.Port > 0) {
-				listeningConns = append(listeningConns, conn)
-			} else if conn.Status == "ESTABLISHED" {
-				establishedConns = append(establishedConns, conn)
-			}
-		}
-
-		// LISTEN first, ESTABLISHED later
-		allConns := append(listeningConns, establishedConns...)
+		// Separate and order connections: LISTEN first, then ESTABLISHED
+		allConns := SeparateConnections(pidConnections)
 
 		processInfo := GetProcessInfo(pid)
 		results = append(results, &FindResult{
@@ -123,7 +116,6 @@ func FindByPort(port int) ([]*FindResult, error) {
 
 	return results, nil
 }
-
 
 // FindByProcessName finds processes by name or command line (partial match).
 // It searches both process name and full command line (like ps -ef).
@@ -168,20 +160,8 @@ func FindByProcessName(name string) ([]*FindResult, error) {
 				connections = []net.ConnectionStat{}
 			}
 
-			// Separate LISTEN and ESTABLISHED
-			listeningConns := make([]net.ConnectionStat, 0)
-			establishedConns := make([]net.ConnectionStat, 0)
-			
-			for _, conn := range connections {
-				if conn.Status == "LISTEN" || (IsUDP(conn.Type) && conn.Laddr.Port > 0) {
-					listeningConns = append(listeningConns, conn)
-				} else if conn.Status == "ESTABLISHED" {
-					establishedConns = append(establishedConns, conn)
-				}
-			}
-
-			// LISTEN first, ESTABLISHED later
-			allConns := append(listeningConns, establishedConns...)
+			// Separate and order connections: LISTEN first, then ESTABLISHED
+			allConns := SeparateConnections(connections)
 
 			processInfo := GetProcessInfo(pid)
 			results = append(results, &FindResult{
@@ -233,5 +213,3 @@ func FindByInput(input string) ([]*FindResult, error) {
 	// If string, search by process name
 	return FindByProcessName(input)
 }
-
-

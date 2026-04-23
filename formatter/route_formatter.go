@@ -91,7 +91,7 @@ func (f *RouteTableFormatter) Format(routes []provider.RouteEntry) string {
 	}
 
 	// 헤더 생성
-	headerStyle := style.HeaderStyle.Copy()
+	headerStyle := style.HeaderStyle
 	styledHeaders := make([]string, len(RouteTableColumns))
 	for i, col := range RouteTableColumns {
 		styledHeaders[i] = headerStyle.Render(col.Title)

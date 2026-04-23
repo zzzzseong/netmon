@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/shirou/gopsutil/v3/process"
@@ -18,26 +17,16 @@ import (
 // If input is a string, it searches by process name.
 func newFindCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "find <pid|port>",
-		Short: "Find process by PID or port",
-		Long: `Find processes by PID or port number.
-Provide a number to search by both PID and port.`,
+		Use:   "find <pid|port|name>",
+		Short: "Find process by PID, port, or name",
+		Long: `Find processes by PID, port number, or process name.
+Provide a number to search by both PID and port.
+Provide a string to search by process name (partial match, case-insensitive).`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			input := args[0]
 
-			// Check if input is a number
-			num, err := strconv.Atoi(input)
-			if err != nil {
-				return fmt.Errorf("invalid input: %s (must be a number for PID or port)", input)
-			}
-
-			// Validate PID/port range
-			if num <= 0 {
-				return fmt.Errorf("invalid input: %d (must be greater than 0)", num)
-			}
-
-			// Auto-search using FindByInput (numbers only)
+			// Auto-search using FindByInput (supports both numbers and names)
 			results, err := utils.FindByInput(input)
 			if err != nil {
 				noResultMsg := lipgloss.NewStyle().
@@ -68,6 +57,8 @@ Provide a number to search by both PID and port.`,
 					typeLabel = fmt.Sprintf("Found by PID: %d", result.PID)
 				case "port":
 					typeLabel = fmt.Sprintf("Found by Port: %d", result.Port)
+				case "name":
+					typeLabel = fmt.Sprintf("Found by Name: %s (PID: %d)", result.ProcessInfo.Name, result.PID)
 				}
 
 				// Display process information (with header)

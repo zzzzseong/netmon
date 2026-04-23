@@ -30,7 +30,7 @@ func NewTracerouteFormatter() *TracerouteFormatter {
 
 // PrintTableHeader prints the table header for traceroute output.
 func (f *TracerouteFormatter) PrintTableHeader() {
-	headerStyle := style.HeaderStyle.Copy()
+	headerStyle := style.HeaderStyle
 
 	// 헤더 생성
 	headers := make([]string, len(TracerouteTableColumns))
@@ -42,7 +42,7 @@ func (f *TracerouteFormatter) PrintTableHeader() {
 
 	// 헤더 출력
 	fmt.Printf("%s  %s  %s  %s  %s\n", headers[0], headers[1], headers[2], headers[3], headers[4])
-	
+
 	// 구분선 출력
 	fmt.Printf("%s  %s  %s  %s  %s\n",
 		strings.Repeat(border, TracerouteTableHopWidth),

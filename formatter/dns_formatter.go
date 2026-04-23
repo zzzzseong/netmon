@@ -48,7 +48,7 @@ func (f *DNSFormatter) Format(result utils.DNSResult) string {
 	if len(result.ARecords) > 0 {
 		recordTypeStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
 		valueStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
-		
+
 		for _, ip := range result.ARecords {
 			rows = append(rows, []string{
 				recordTypeStyle.Render("A"),
@@ -61,7 +61,7 @@ func (f *DNSFormatter) Format(result utils.DNSResult) string {
 	if len(result.AAAARecords) > 0 {
 		recordTypeStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
 		valueStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
-		
+
 		for _, ip := range result.AAAARecords {
 			rows = append(rows, []string{
 				recordTypeStyle.Render("AAAA"),
@@ -74,11 +74,61 @@ func (f *DNSFormatter) Format(result utils.DNSResult) string {
 	if len(result.PTRRecords) > 0 {
 		recordTypeStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
 		valueStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
-		
+
 		for _, name := range result.PTRRecords {
 			rows = append(rows, []string{
 				recordTypeStyle.Render("PTR"),
 				valueStyle.Render(name),
+			})
+		}
+	}
+
+	// Add CNAME record
+	if result.CNAMERecord != "" {
+		recordTypeStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
+		valueStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
+
+		rows = append(rows, []string{
+			recordTypeStyle.Render("CNAME"),
+			valueStyle.Render(result.CNAMERecord),
+		})
+	}
+
+	// Add MX records
+	if len(result.MXRecords) > 0 {
+		recordTypeStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
+		valueStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
+
+		for _, mx := range result.MXRecords {
+			rows = append(rows, []string{
+				recordTypeStyle.Render("MX"),
+				valueStyle.Render(mx),
+			})
+		}
+	}
+
+	// Add NS records
+	if len(result.NSRecords) > 0 {
+		recordTypeStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
+		valueStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
+
+		for _, ns := range result.NSRecords {
+			rows = append(rows, []string{
+				recordTypeStyle.Render("NS"),
+				valueStyle.Render(ns),
+			})
+		}
+	}
+
+	// Add TXT records
+	if len(result.TXTRecords) > 0 {
+		recordTypeStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
+		valueStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
+
+		for _, txt := range result.TXTRecords {
+			rows = append(rows, []string{
+				recordTypeStyle.Render("TXT"),
+				valueStyle.Render(txt),
 			})
 		}
 	}
@@ -92,7 +142,8 @@ func (f *DNSFormatter) Format(result utils.DNSResult) string {
 	}
 
 	// Create table headers
-	headerStyle = style.HeaderStyle.Copy().Align(lipgloss.Center)
+	headerStyle = style.HeaderStyle
+	headerStyle = headerStyle.Align(lipgloss.Center)
 	styledHeaders := make([]string, len(DNSTableColumns))
 	for i, col := range DNSTableColumns {
 		styledHeaders[i] = headerStyle.Width(col.Width).Render(col.Title)

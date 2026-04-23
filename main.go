@@ -5,10 +5,10 @@ import (
 )
 
 // Version 정보
-const (
-	Version   = "1.3.0"
-	BuildDate = "2025-12-05"
-)
+const Version = "1.4.0"
+
+// BuildDate is set at build time via -ldflags "-X main.BuildDate=<date>"
+var BuildDate = "dev"
 
 func main() {
 	// Create configuration with version information

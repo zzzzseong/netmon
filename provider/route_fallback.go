@@ -252,15 +252,15 @@ func convertToCIDR(ip, netmask string) string {
 	prefixLen := 0
 	for _, part := range parts {
 		if n, err := strconv.Atoi(part); err == nil {
+			n &= 0xFF // Ensure we only count 8 bits per octet
 			for n > 0 {
 				if n&128 != 0 {
 					prefixLen++
 				}
-				n <<= 1
+				n = (n << 1) & 0xFF
 			}
 		}
 	}
 
 	return fmt.Sprintf("%s/%d", ip, prefixLen)
 }
-

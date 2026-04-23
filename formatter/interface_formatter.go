@@ -98,7 +98,8 @@ func (f *InterfaceTableFormatter) Format(interfaces []net.InterfaceStat, showAll
 	}
 
 	// 헤더 생성
-	headerStyle := style.HeaderStyle.Copy().Align(lipgloss.Center)
+	headerStyle := style.HeaderStyle
+	headerStyle = headerStyle.Align(lipgloss.Center)
 	styledHeaders := make([]string, len(InterfaceTableColumns))
 	for i, col := range InterfaceTableColumns {
 		styledHeaders[i] = headerStyle.Width(col.Width).Render(col.Title)

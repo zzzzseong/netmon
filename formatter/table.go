@@ -16,7 +16,8 @@ type TableColumn struct {
 // It applies consistent styling and returns the formatted table as a string.
 func CreateTable(rows [][]string, columns []TableColumn, totalWidth int) string {
 	// 헤더 생성
-	headerStyle := style.HeaderStyle.Copy().Align(lipgloss.Center)
+	headerStyle := style.HeaderStyle
+	headerStyle = headerStyle.Align(lipgloss.Center)
 	headers := make([]string, len(columns))
 	for i, col := range columns {
 		headers[i] = headerStyle.Width(col.Width).Render(col.Title)

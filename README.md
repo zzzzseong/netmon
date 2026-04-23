@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.3.0-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Version](https://img.shields.io/badge/version-1.4.0-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/zzzzseong/netmon)
 
 *A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.*
@@ -43,15 +43,16 @@
   - Default gateway information
   - Top processes by connection count
 - **🌐 DNS Lookup** - Perform DNS lookups with clean output
-  - Forward lookup (A and AAAA records)
+  - Forward lookup (A, AAAA, CNAME, MX, NS, and TXT records)
   - Reverse lookup (PTR records)
   - Response time measurement
   - No external dependencies (uses Go's net package)
 
 
 ### 🔍 Process Management
-- **Smart Process Search** - Find processes by PID or port with automatic detection
+- **Smart Process Search** - Find processes by PID, port, or name with automatic detection
   - Provide a number to search by both PID and port simultaneously
+  - Provide a string to search by process name or command line substring
   - Shows full command line (like `ps -ef`) for easy identification
   - Displays all active ports used by the process
 - **Process Shutdown** - Safely terminate processes with interactive confirmation
@@ -84,7 +85,7 @@ The easiest way to install on Linux:
 curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash
 
 # Install specific version
-curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.3.0
+curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.4.0
 ```
 
 The script automatically:
@@ -188,6 +189,26 @@ netmon ls -a
 │ TCP        │ *:3000              │ LISTEN     │ 23456     │ nginx                     │ jisung          │ 2.5%      │ 0.8%     │
 │ UDP        │ 127.0.0.1:53         │ NONE       │ 567       │ systemd-resolved          │ root            │ 0.1%      │ 0.3%     │
 ╰────────────┴─────────────────────┴────────────┴───────────┴───────────────────────────┴─────────────────┴───────────┴──────────╯
+```
+
+---
+
+### 🔗 Show Active Connections
+
+Display active ESTABLISHED TCP connections with owning process information:
+
+```bash
+netmon conn
+```
+
+**Output:**
+```
+╭────────────┬───────────────────────────┬───────────────────────────┬───────────┬─────────────────────────╮
+│  PROTOCOL  │       LOCAL ADDRESS       │      REMOTE ADDRESS       │   PID     │         PROCESS         │
+├────────────┼───────────────────────────┼───────────────────────────┼───────────┼─────────────────────────┤
+│ TCP        │ 127.0.0.1:8080            │ 192.168.1.100:54321       │ 12345     │ node                    │
+│ TCP        │ 10.0.0.15:5173            │ 142.250.206.206:443       │ 23456     │ chrome                  │
+╰────────────┴───────────────────────────┴───────────────────────────┴───────────┴─────────────────────────╯
 ```
 
 ---
@@ -299,6 +320,8 @@ netmon stats
 ### 🌐 Perform DNS Lookup
 
 Lookup DNS records for a domain or IP address:
+- Domain lookup returns `A`, `AAAA`, `CNAME`, `MX`, `NS`, and `TXT` records when available
+- IP lookup returns `PTR` records for reverse DNS
 
 ```bash
 # Forward lookup (domain to IP)
@@ -314,6 +337,10 @@ netmon dns google.com
 ├───────────────┼──────────────────────────────────────────────────────────────┤
 │ A             │ 142.250.206.206                                              │
 │ AAAA          │ 2404:6800:400a:813::200e                                     │
+│ CNAME         │ google.com.                                                  │
+│ MX            │ smtp.google.com. (priority: 10)                              │
+│ NS            │ ns1.google.com.                                              │
+│ TXT           │ v=spf1 include:_spf.google.com ~all                          │
 ╰───────────────┴──────────────────────────────────────────────────────────────╯
 
 Response Time: 6ms
@@ -340,16 +367,17 @@ Response Time: 3ms
 
 ---
 
-### 🔍 Find Process by PID or Port
+### 🔍 Find Process by PID, Port, or Name
 
-Find processes using a smart search that automatically detects PID or port:
+Find processes using a smart search that automatically detects PID, port, or process name:
 
 ```bash
-netmon find <pid|port>
+netmon find <pid|port|name>
 ```
 
 **How it works:**
 - Provide a number, and `find` automatically searches by both PID and port
+- Provide a string, and `find` searches by process name or command line substring
 - If both match, both results are shown (duplicates removed)
 - If only one matches, only that result is displayed
 - Shows full command line (like `ps -ef`) for easy process identification
@@ -363,6 +391,9 @@ netmon find 8080
 
 # Search by PID 8922
 netmon find 8922
+
+# Search by process name
+netmon find nginx
 
 # If PID 8080 exists AND port 8080 is in use, both results shown
 netmon find 8080
@@ -439,7 +470,8 @@ Are you sure you want to shutdown this process?
 | `route` | Display routing table with smart filtering | `netmon route` | - |
 | `stats` | Display network statistics summary | `netmon stats` | - |
 | `dns` | Perform DNS lookup | `netmon dns <domain|ip>` | - |
-| `find` | Find process by PID or port (auto-detects) | `netmon find <pid|port>` | - |
+| `conn` | Show active ESTABLISHED connections | `netmon conn` | - |
+| `find` | Find process by PID, port, or name (auto-detects) | `netmon find <pid|port|name>` | - |
 | `shutdown` | Shutdown a process | `netmon shutdown <pid>` | - |
 | `traceroute` | Trace route to network host | `netmon traceroute <host>` | - |
 | `version` | Show version information | `netmon version` | - |
@@ -458,7 +490,7 @@ Are you sure you want to shutdown this process?
 
 ---
 
-## 🆕 What's New in v1.3.0
+## 🆕 What's New in v1.4.0
 
 - 📊 **Network Statistics Command** - Quick overview of network activity with connection counts, listening ports, and top processes
 - 🌐 **DNS Lookup Command** - Fast DNS lookups (forward and reverse) with response time measurement

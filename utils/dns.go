@@ -18,6 +18,10 @@ type DNSResult struct {
 	ARecords     []string      // IPv4 addresses
 	AAAARecords  []string      // IPv6 addresses
 	PTRRecords   []string      // Reverse DNS records
+	MXRecords    []string      // Mail exchange records
+	NSRecords    []string      // Name server records
+	TXTRecords   []string      // TXT records
+	CNAMERecord  string        // CNAME record
 	ResponseTime time.Duration // Time taken for lookup
 	Error        error         // Error if lookup failed
 }
@@ -64,6 +68,34 @@ func LookupDomain(domain string) DNSResult {
 			// IPv6
 			result.AAAARecords = append(result.AAAARecords, ip.String())
 		}
+	}
+
+	// Lookup CNAME record
+	cname, err := resolver.LookupCNAME(ctx, domain)
+	if err == nil && cname != domain+"." && cname != "" {
+		result.CNAMERecord = cname
+	}
+
+	// Lookup MX records
+	mxRecords, err := resolver.LookupMX(ctx, domain)
+	if err == nil {
+		for _, mx := range mxRecords {
+			result.MXRecords = append(result.MXRecords, fmt.Sprintf("%s (priority: %d)", mx.Host, mx.Pref))
+		}
+	}
+
+	// Lookup NS records
+	nsRecords, err := resolver.LookupNS(ctx, domain)
+	if err == nil {
+		for _, ns := range nsRecords {
+			result.NSRecords = append(result.NSRecords, ns.Host)
+		}
+	}
+
+	// Lookup TXT records
+	txtRecords, err := resolver.LookupTXT(ctx, domain)
+	if err == nil {
+		result.TXTRecords = txtRecords
 	}
 
 	return result
@@ -120,7 +152,7 @@ func ValidateDomain(domain string) error {
 	if len(domain) > 253 {
 		return fmt.Errorf("domain name too long (max 253 characters)")
 	}
-	
+
 	// Check for invalid characters
 	for _, char := range domain {
 		if !((char >= 'a' && char <= 'z') ||
@@ -130,19 +162,19 @@ func ValidateDomain(domain string) error {
 			return fmt.Errorf("domain contains invalid character: %c", char)
 		}
 	}
-	
+
 	// Check that domain doesn't start or end with dot or hyphen
 	if domain[0] == '.' || domain[0] == '-' || domain[len(domain)-1] == '.' || domain[len(domain)-1] == '-' {
 		return fmt.Errorf("domain cannot start or end with dot or hyphen")
 	}
-	
+
 	// Check for consecutive dots
 	for i := 0; i < len(domain)-1; i++ {
 		if domain[i] == '.' && domain[i+1] == '.' {
 			return fmt.Errorf("domain cannot contain consecutive dots")
 		}
 	}
-	
+
 	return nil
 }
 
@@ -152,12 +184,12 @@ func ValidateHostname(hostname string) error {
 	if hostname == "" {
 		return fmt.Errorf("hostname cannot be empty")
 	}
-	
+
 	// Check if it's a valid IP address
 	if IsIPAddress(hostname) {
 		return nil
 	}
-	
+
 	// Validate as domain name
 	return ValidateDomain(hostname)
 }

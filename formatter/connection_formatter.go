@@ -76,7 +76,8 @@ func (f *ConnectionTableFormatter) Format(connections []net.ConnectionStat) stri
 	}
 
 	// Create table headers
-	headerStyle := style.HeaderStyle.Copy().Align(lipgloss.Center)
+	headerStyle := style.HeaderStyle
+	headerStyle = headerStyle.Align(lipgloss.Center)
 	styledHeaders := make([]string, len(ConnectionTableColumns))
 	for i, col := range ConnectionTableColumns {
 		styledHeaders[i] = headerStyle.Width(col.Width).Render(col.Title)

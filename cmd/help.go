@@ -95,7 +95,8 @@ func printCustomHelp(cmd *cobra.Command, args []string, cfg Config) {
 
 	// Footer
 	footerText := "For more information, visit: https://github.com/zzzzseong/netmon"
-	fmt.Println(style.FooterTextStyle.Copy().MarginTop(2).Render(footerText))
+	footerStyle := style.FooterTextStyle
+	fmt.Println(footerStyle.MarginTop(2).Render(footerText))
 }
 
 // printCustomUsage prints a custom usage message
@@ -107,4 +108,3 @@ func printCustomUsage(cmd *cobra.Command) error {
 	fmt.Println(usageStyle.Render(usageText))
 	return nil
 }
-

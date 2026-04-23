@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -110,12 +109,9 @@ func executeTracerouteStreaming(target string, parser *parser.TracerouteParser) 
 	}
 
 	// Set up signal handling for graceful cancellation
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Channel to receive signals
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(sigChan)
 
 	// Goroutine to handle cancellation
 	done := make(chan error, 1)
@@ -135,10 +131,6 @@ func executeTracerouteStreaming(target string, parser *parser.TracerouteParser) 
 
 	// Wait for either completion or cancellation
 	select {
-	case <-ctx.Done():
-		// Context cancelled
-		cmd.Process.Kill()
-		return fmt.Errorf("traceroute cancelled")
 	case sig := <-sigChan:
 		// Signal received (Ctrl+C)
 		fmt.Fprintf(os.Stderr, "\nReceived signal: %v. Terminating traceroute...\n", sig)

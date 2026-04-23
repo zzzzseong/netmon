@@ -20,10 +20,10 @@ func TestPortTableFormatter_Format(t *testing.T) {
 		},
 	}
 
-	// Note: We can't easily mock utils.GetProcessInfo without refactoring, 
+	// Note: We can't easily mock utils.GetProcessInfo without refactoring,
 	// so the process name/user might be "N/A" or actual values if PID 1234 exists.
 	// For this test, we focus on checking if the table contains the IP and Port.
-	
+
 	output := f.Format(connections)
 
 	if !strings.Contains(output, "127.0.0.1:8080") {
@@ -54,7 +54,7 @@ func TestProcessInfoFormatter_Format(t *testing.T) {
 		},
 	}
 
-	output := f.Format(pid, name, status, connections)
+	output := f.Format("", pid, name, status, connections)
 
 	if !strings.Contains(output, "5678") {
 		t.Errorf("Output should contain PID '5678'")

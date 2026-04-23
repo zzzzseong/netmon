@@ -32,6 +32,12 @@ func newLsCmd() *cobra.Command {
 			// Filter only LISTEN connections (include UDP only if -a option is set)
 			listeningConns := utils.FilterListeningConnections(connections, includeUDP)
 
+			// Check if there are any listening connections
+			if len(listeningConns) == 0 {
+				fmt.Println("No listening ports found.")
+				return nil
+			}
+
 			// Sort by port number
 			sortedConns := utils.SortConnectionsByPort(listeningConns)
 
