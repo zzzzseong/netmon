@@ -29,12 +29,16 @@ func newStatsCmd() *cobra.Command {
 			tcpCount := 0
 			udpCount := 0
 			for _, conn := range connections {
-				if conn.Status == "ESTABLISHED" {
-					if utils.IsUDP(conn.Type) {
-						udpCount++
-					} else {
-						tcpCount++
-					}
+		if utils.IsUDP(conn.Type) {
+			// UDP does not have a stable ESTABLISHED state like TCP.
+			if conn.Laddr.Port > 0 {
+				udpCount++
+			}
+			continue
+		}
+
+		if conn.Status == "ESTABLISHED" {
+			tcpCount++
 				}
 			}
 
@@ -92,17 +96,25 @@ func getTopProcessesByConnections(connections []net.ConnectionStat, topN int) []
 	processNames := make(map[int32]string)
 
 	for _, conn := range connections {
-		if conn.Status == "ESTABLISHED" && conn.Pid > 0 {
-			// Get process name if not cached
-			if _, ok := processNames[conn.Pid]; !ok {
-				processInfo := utils.GetProcessInfo(conn.Pid)
-				processNames[conn.Pid] = processInfo.Name
-			}
+		if conn.Pid <= 0 {
+			continue
+		}
+		if !utils.IsUDP(conn.Type) && conn.Status != "ESTABLISHED" {
+			continue
+		}
+		if utils.IsUDP(conn.Type) && conn.Laddr.Port == 0 {
+			continue
+		}
 
-			name := processNames[conn.Pid]
-			if name != "N/A" {
-				processConnCount[name]++
-			}
+		// Get process name if not cached
+		if _, ok := processNames[conn.Pid]; !ok {
+			processInfo := utils.GetProcessInfo(conn.Pid)
+			processNames[conn.Pid] = processInfo.Name
+		}
+
+		name := processNames[conn.Pid]
+		if name != "N/A" {
+			processConnCount[name]++
 		}
 	}
 

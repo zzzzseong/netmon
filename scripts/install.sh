@@ -115,12 +115,63 @@ check_traceroute() {
 get_latest_version() {
     if [ "$VERSION" = "latest" ]; then
         echo -e "${BLUE}🔍 Checking for latest version...${NC}"
-        VERSION=$(curl -s "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        if ! VERSION=$(curl -sSf "https://api.github.com/repos/${REPO}/releases/latest" | sed -n 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1); then
+            echo -e "${RED}❌ Failed to query latest release from GitHub API.${NC}"
+            echo -e "${YELLOW}   You can retry with an explicit version: ./install.sh vX.Y.Z${NC}"
+            exit 1
+        fi
+        if [ -z "$VERSION" ]; then
+            echo -e "${RED}❌ Could not parse latest version tag from GitHub API response.${NC}"
+            echo -e "${YELLOW}   You can retry with an explicit version: ./install.sh vX.Y.Z${NC}"
+            exit 1
+        fi
     fi
     
     # Remove v prefix
     VERSION_NUM=$(echo $VERSION | sed 's/^v//')
     echo -e "${GREEN}✅ Version: ${VERSION}${NC}"
+}
+
+# Verify checksum for downloaded artifact
+verify_checksum() {
+    local artifact_path="$1"
+    local artifact_name
+    local checksums_url
+    local expected
+    local actual
+
+    artifact_name=$(basename "$artifact_path")
+    checksums_url="https://github.com/${REPO}/releases/download/${VERSION}/SHA256SUMS"
+
+    echo -e "${BLUE}🔐 Verifying checksum...${NC}"
+    if ! curl -sSfL -o "${TEMP_DIR}/SHA256SUMS" "$checksums_url"; then
+        echo -e "${RED}❌ Failed to download SHA256SUMS from release.${NC}"
+        exit 1
+    fi
+
+    expected=$(awk -v f="$artifact_name" '$2 == f { print $1 }' "${TEMP_DIR}/SHA256SUMS" | head -n 1)
+    if [ -z "$expected" ]; then
+        echo -e "${RED}❌ No checksum entry found for ${artifact_name}.${NC}"
+        exit 1
+    fi
+
+    if command -v shasum >/dev/null 2>&1; then
+        actual=$(shasum -a 256 "$artifact_path" | awk '{print $1}')
+    elif command -v sha256sum >/dev/null 2>&1; then
+        actual=$(sha256sum "$artifact_path" | awk '{print $1}')
+    else
+        echo -e "${RED}❌ No SHA256 tool available (shasum or sha256sum required).${NC}"
+        exit 1
+    fi
+
+    if [ "$expected" != "$actual" ]; then
+        echo -e "${RED}❌ Checksum verification failed for ${artifact_name}.${NC}"
+        echo -e "${YELLOW}   expected: ${expected}${NC}"
+        echo -e "${YELLOW}   actual:   ${actual}${NC}"
+        exit 1
+    fi
+
+    echo -e "${GREEN}✅ Checksum verified${NC}"
 }
 
 # Download binary
@@ -138,6 +189,8 @@ download_binary() {
         echo -e "${RED}❌ Download failed. Please check if the version exists.${NC}"
         exit 1
     fi
+
+    verify_checksum "${TEMP_DIR}/netmon.tar.gz"
     
     # Extract
     echo -e "${BLUE}📦 Extracting...${NC}"

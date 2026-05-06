@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         go-version: ['1.25']
 
     steps:
@@ -30,3 +30,30 @@ jobs:
 
       - name: Test
         run: go test -v -race ./...
+
+      - name: Build CLI binary
+        run: go build -o netmon .
+
+      - name: Smoke test --help (Unix)
+        if: runner.os != 'Windows'
+        run: ./netmon --help
+
+      - name: Smoke test --help (Windows)
+        if: runner.os == 'Windows'
+        run: .\netmon.exe --help
+
+      - name: Smoke test version (Unix)
+        if: runner.os != 'Windows'
+        run: ./netmon version
+
+      - name: Smoke test version (Windows)
+        if: runner.os == 'Windows'
+        run: .\netmon.exe version
+
+      - name: Smoke test dns (Unix)
+        if: runner.os != 'Windows'
+        run: ./netmon dns example.com
+
+      - name: Smoke test dns (Windows)
+        if: runner.os == 'Windows'
+        run: .\netmon.exe dns example.com

@@ -25,6 +25,9 @@ jobs:
           - goos: linux
             goarch: arm64
             name: Linux ARM64
+          - goos: windows
+            goarch: amd64
+            name: Windows AMD64
 
     steps:
       - uses: actions/checkout@v4
@@ -40,20 +43,45 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: |
-          go build -o netmon .
-          tar -czf netmon-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz netmon
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            go build -o netmon.exe .
+            zip -q netmon-${{ matrix.goos }}-${{ matrix.goarch }}.zip netmon.exe
+          else
+            go build -o netmon .
+            tar -czf netmon-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz netmon
+          fi
 
       - name: Calculate and output SHA256
         run: |
-          SHA256=$(shasum -a 256 netmon-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz | cut -d' ' -f1)
-          echo "SHA256 for ${{ matrix.goos }}-${{ matrix.goarch }}: $SHA256"
-          echo "${{ matrix.goos }}-${{ matrix.goarch }}=$SHA256" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            ARTIFACT="netmon-${{ matrix.goos }}-${{ matrix.goarch }}.zip"
+          else
+            ARTIFACT="netmon-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz"
+          fi
+          SHA256=$(shasum -a 256 "${ARTIFACT}" | cut -d' ' -f1)
+          echo "SHA256 for ${ARTIFACT}: $SHA256"
+          echo "${SHA256}  ${ARTIFACT}" >> sha256-${{ matrix.goos }}-${{ matrix.goarch }}.txt
+          echo "${ARTIFACT}=$SHA256" >> $GITHUB_STEP_SUMMARY
 
-      - name: Upload to Release
+      - name: Upload platform checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: sha256-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: sha256-${{ matrix.goos }}-${{ matrix.goarch }}.txt
+
+      - name: Upload Unix artifact to Release
+        if: matrix.goos != 'windows'
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            netmon-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
+          files: netmon-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
+          tag_name: ${{ github.event.release.tag_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows artifact to Release
+        if: matrix.goos == 'windows'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: netmon-${{ matrix.goos }}-${{ matrix.goarch }}.zip
           tag_name: ${{ github.event.release.tag_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -167,3 +195,24 @@ jobs:
           else
             echo "No changes to commit"
           fi
+
+  publish-checksums:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download checksum fragments
+        uses: actions/download-artifact@v4
+        with:
+          path: checksums
+
+      - name: Build SHA256SUMS
+        run: |
+          cat checksums/*/*.txt | sort > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Upload SHA256SUMS to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: SHA256SUMS
+          tag_name: ${{ github.event.release.tag_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}

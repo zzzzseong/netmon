@@ -140,10 +140,8 @@ func executeTracerouteStreaming(target string, parser *parser.TracerouteParser) 
 	case err := <-done:
 		// Process completed
 		if err != nil {
-			// Partial results may have been displayed, but log the error
-			// Return nil so user can see partial results, but log error information
-			fmt.Fprintf(os.Stderr, "Warning: traceroute command exited with error: %v\n", err)
-			return nil
+			// Partial results may already be shown, but propagate failure for reliable exit codes.
+			return fmt.Errorf("traceroute command exited with error: %w", err)
 		}
 		return nil
 	}

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"regexp"
 	"strconv"
-	"strings"
 
 	"netmon/formatter"
 )
@@ -30,7 +29,7 @@ func (p *TracerouteParser) ParseUnixTraceroute(scanner *bufio.Scanner) {
 	}
 
 	hopRegex := regexp.MustCompile(`^\s*(\d+)\s+(.*)$`)
-	ipRegex := regexp.MustCompile(`(\d+\.\d+\.\d+\.\d+|[0-9a-fA-F:]+)`)
+	ipRegex := regexp.MustCompile(`(\d+\.\d+\.\d+\.\d+|(?:[0-9a-fA-F]{0,4}:){2,}[0-9a-fA-F]{0,4})`)
 	rttRegex := regexp.MustCompile(`(\d+\.\d+)\s*ms`)
 
 	for scanner.Scan() {
@@ -87,14 +86,8 @@ func (p *TracerouteParser) ParseUnixTraceroute(scanner *bufio.Scanner) {
 // ParseWindowsTracert parses Windows tracert output from the scanner.
 // It reads lines from the scanner and formats each hop in real-time.
 func (p *TracerouteParser) ParseWindowsTracert(scanner *bufio.Scanner) {
-	// 헤더 건너뛰기
-	headerSkipped := 0
-	for scanner.Scan() && headerSkipped < 4 {
-		headerSkipped++
-	}
-
 	hopRegex := regexp.MustCompile(`^\s*(\d+)\s+(.*)$`)
-	ipRegex := regexp.MustCompile(`(\d+\.\d+\.\d+\.\d+)`)
+	ipRegex := regexp.MustCompile(`(\d+\.\d+\.\d+\.\d+|(?:[0-9a-fA-F]{0,4}:){2,}[0-9a-fA-F]{0,4})`)
 	rttRegex := regexp.MustCompile(`(<?\d+)\s*ms`)
 
 	for scanner.Scan() {
@@ -119,29 +112,25 @@ func (p *TracerouteParser) ParseWindowsTracert(scanner *bufio.Scanner) {
 			Status: "timeout",
 		}
 
-		if strings.Contains(rest, "timed out") || strings.Contains(rest, "* * *") {
-			hop.Status = "timeout"
-		} else {
-			if ipMatch := ipRegex.FindString(rest); ipMatch != "" {
-				hop.IP = ipMatch
-				hop.Host = ipMatch
-				hop.Status = "success"
-			}
+		if ipMatch := ipRegex.FindString(rest); ipMatch != "" {
+			hop.IP = ipMatch
+			hop.Host = ipMatch
+			hop.Status = "success"
+		}
 
-			rttMatches := rttRegex.FindAllStringSubmatch(rest, -1)
-			for i, match := range rttMatches {
-				if i >= 3 {
-					break
-				}
-				rttValue := match[1] + " ms"
-				switch i {
-				case 0:
-					hop.RTT1 = rttValue
-				case 1:
-					hop.RTT2 = rttValue
-				case 2:
-					hop.RTT3 = rttValue
-				}
+		rttMatches := rttRegex.FindAllStringSubmatch(rest, -1)
+		for i, match := range rttMatches {
+			if i >= 3 {
+				break
+			}
+			rttValue := match[1] + " ms"
+			switch i {
+			case 0:
+				hop.RTT1 = rttValue
+			case 1:
+				hop.RTT2 = rttValue
+			case 2:
+				hop.RTT3 = rttValue
 			}
 		}
 
