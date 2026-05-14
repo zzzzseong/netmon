@@ -145,9 +145,14 @@ func TestShouldIncludeRoute_EdgeCases(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "IPv6 should be excluded (not parsed)",
+			name:     "IPv6 route should be excluded",
 			entry:    RouteEntry{Destination: "fe80::/10"},
-			expected: true, // Will pass through as parsing fails
+			expected: false,
+		},
+		{
+			name:     "global unicast IPv6 should be excluded",
+			entry:    RouteEntry{Destination: "2001:db8::/32"},
+			expected: false,
 		},
 	}
 

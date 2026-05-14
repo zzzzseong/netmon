@@ -8,7 +8,6 @@ import (
 	"os/signal"
 	"runtime"
 	"strconv"
-	"syscall"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
@@ -110,7 +109,7 @@ func executeTracerouteStreaming(target string, parser *parser.TracerouteParser) 
 
 	// Set up signal handling for graceful cancellation
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(sigChan, tracerouteSignals...)
 	defer signal.Stop(sigChan)
 
 	// Goroutine to handle cancellation

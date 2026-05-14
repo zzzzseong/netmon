@@ -33,10 +33,9 @@ func ShouldIncludeRoute(entry RouteEntry) bool {
 		return true
 	}
 
-	ip := ipNet.IP
-	
-	// IP 길이 체크 (IPv4만 처리)
-	if len(ip) < 4 {
+	// IPv4 주소만 처리: To4()가 nil이면 IPv6 라우트이므로 제외
+	ip := ipNet.IP.To4()
+	if ip == nil {
 		return false
 	}
 
@@ -74,4 +73,3 @@ func FilterRoutes(entries []RouteEntry) []RouteEntry {
 	}
 	return filtered
 }
-

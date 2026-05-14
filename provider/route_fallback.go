@@ -64,7 +64,10 @@ func parseLinuxRoute(output string) []RouteEntry {
 
 		route := RouteEntry{}
 
-		// ip route show 형식 파싱
+		// ip route show 형식 파싱 (IPv6 라우트 제외)
+		if strings.Contains(fields[0], ":") {
+			continue
+		}
 		if fields[0] == "default" {
 			route.Destination = "default"
 		} else if strings.Contains(fields[0], "/") || strings.Contains(fields[0], ".") {
@@ -211,6 +214,11 @@ func parseWindowsRoute(output string) []RouteEntry {
 		gateway := fields[2]
 		iface := fields[3]
 		metric := 0
+
+		// IPv6 라우트 제외
+		if strings.Contains(dest, ":") {
+			continue
+		}
 
 		if len(fields) >= 5 {
 			if m, err := strconv.Atoi(fields[4]); err == nil {
