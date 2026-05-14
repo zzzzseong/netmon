@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.4.0-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Version](https://img.shields.io/badge/version-1.5.0-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/zzzzseong/netmon)
 
 *A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.*
@@ -85,7 +85,7 @@ The easiest way to install on Linux:
 curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash
 
 # Install specific version
-curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.4.0
+curl -fsSL https://raw.githubusercontent.com/zzzzseong/netmon/main/scripts/install.sh | bash -s v1.5.0
 ```
 
 The script automatically:
@@ -118,7 +118,10 @@ Pre-built binaries are available in the [Releases](https://github.com/zzzzseong/
 - `netmon-darwin-amd64.tar.gz` (Intel)
 - `netmon-darwin-arm64.tar.gz` (Apple Silicon)
 
-**Installation:**
+**For Windows:**
+- `netmon-windows-amd64.zip` (Intel/AMD 64-bit)
+
+**Installation (Linux / macOS):**
 
 ```bash
 # Download and extract
@@ -131,6 +134,19 @@ sudo mv netmon /usr/local/bin/
 chmod +x /usr/local/bin/netmon
 ```
 
+**Installation (Windows):**
+
+```powershell
+# Extract the zip file
+Expand-Archive netmon-windows-amd64.zip -DestinationPath .
+
+# Run directly
+.\netmon.exe --help
+
+# Or move to a directory in your PATH (optional, run as Administrator)
+Move-Item netmon.exe C:\Windows\System32\netmon.exe
+```
+
 ### 🔨 Build from Source
 
 **Prerequisites:**
@@ -140,16 +156,35 @@ chmod +x /usr/local/bin/netmon
   - macOS: Usually pre-installed, or `brew install traceroute`
   - Windows: Uses built-in `tracert` command
 
+**Linux / macOS:**
+
 ```bash
 # Clone the repository
 git clone https://github.com/zzzzseong/netmon.git
 cd netmon
 
 # Build
-go build -o netmon .
+go build .
 
 # Install (optional)
 sudo mv netmon /usr/local/bin/
+```
+
+**Windows:**
+
+```powershell
+# Clone the repository
+git clone https://github.com/zzzzseong/netmon.git
+cd netmon
+
+# Build (produces netmon.exe)
+go build .
+
+# Run directly
+.\netmon.exe --help
+
+# Or move to a directory in your PATH (optional, run as Administrator)
+Move-Item netmon.exe C:\Windows\System32\netmon.exe
 ```
 
 ---
@@ -490,15 +525,26 @@ Are you sure you want to shutdown this process?
 
 ---
 
-## 🆕 What's New in v1.4.0
+## 🆕 What's New in v1.5.0
+
+Released: 2026-05-14
+
+- 🪟 **Windows Installation Guide** - Full Windows download and installation documentation added
+- 🔍 **Find Command Fix** - Full command line now correctly displayed (ps -ef style) when finding processes
+- 🌐 **DNS Enhancement** - Underscore-containing domains (SRV, DMARC records like `_dmarc.google.com`) now supported
+- 🛡️ **Route Filtering** - IPv6 routes properly excluded from routing table output on all platforms
+- 🔧 **Cross-Platform Reliability** - Resolved Windows CI failures (`go vet` unsafe.Pointer, binary extension)
+- ⚡ **Signal Handling** - Traceroute cancellation signal handling split by platform (Unix: SIGTERM+Interrupt, Windows: Interrupt only)
+
+### Previous Releases
+
+**v1.4.0:**
 
 - 📊 **Network Statistics Command** - Quick overview of network activity with connection counts, listening ports, and top processes
 - 🌐 **DNS Lookup Command** - Fast DNS lookups (forward and reverse) with response time measurement
 - 🔍 **Enhanced Find Command** - Now displays active connections for found processes
 - 🎨 **Enhanced Formatting** - Beautiful table layouts for all new commands
 - ⚡ **Performance Improvements** - Optimized connection filtering and DNS lookup performance
-
-### Previous Releases
 
 **v1.2.2:**
 - 🔍 Enhanced Find Command - Smart search that automatically detects PID or port, shows full command line
