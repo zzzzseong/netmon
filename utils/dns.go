@@ -158,7 +158,7 @@ func ValidateDomain(domain string) error {
 		if !((char >= 'a' && char <= 'z') ||
 			(char >= 'A' && char <= 'Z') ||
 			(char >= '0' && char <= '9') ||
-			char == '.' || char == '-') {
+			char == '.' || char == '-' || char == '_') {
 			return fmt.Errorf("domain contains invalid character: %c", char)
 		}
 	}

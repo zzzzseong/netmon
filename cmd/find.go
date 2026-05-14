@@ -62,12 +62,13 @@ Provide a string to search by process name (partial match, case-insensitive).`,
 				}
 
 				// Display process information (with header)
-				info := fmtter.Format(
+				info := fmtter.FormatWithCmdline(
 					typeLabel,
 					int(result.PID),
 					result.ProcessInfo.Name,
 					status,
 					result.Connections,
+					result.ProcessInfo.Cmdline,
 				)
 				fmt.Println(info)
 			}

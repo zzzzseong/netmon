@@ -96,11 +96,12 @@ func (p *WindowsRouteProvider) GetRoutes() ([]RouteEntry, error) {
 	entries := make([]RouteEntry, 0, numEntries)
 
 	// table.Table은 [1]이지만 실제로는 NumEntries만큼의 배열
-	tablePtr := uintptr(unsafe.Pointer(&table.Table[0]))
+	// unsafe.Add를 사용해 intermediate uintptr 저장 없이 포인터 연산 (go vet 규칙 준수)
+	base := unsafe.Pointer(&table.Table[0])
 	rowSize := unsafe.Sizeof(mibIpforwardRow2{})
 
 	for i := uint32(0); i < numEntries; i++ {
-		row := (*mibIpforwardRow2)(unsafe.Pointer(tablePtr + uintptr(i)*rowSize))
+		row := (*mibIpforwardRow2)(unsafe.Add(base, uintptr(i)*rowSize))
 
 		entry := RouteEntry{}
 
