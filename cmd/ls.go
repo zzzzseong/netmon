@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/shirou/gopsutil/v3/net"
 	"github.com/spf13/cobra"
@@ -17,40 +18,39 @@ func newLsCmd() *cobra.Command {
 		Short: "List active ports (-a: include UDP)",
 		Long:  `Display all active listening ports with detailed process information.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Get -a option value
 			includeUDP, _ := cmd.Flags().GetBool("all")
+			watch, _ := cmd.Flags().GetBool("watch")
+			interval, _ := cmd.Flags().GetInt("interval")
 
-			// Create formatter
 			fmtter := formatter.NewPortTableFormatter()
 
-			// Get all network connections
-			connections, err := net.Connections("inet")
-			if err != nil {
-				return fmt.Errorf("failed to get network connection information: %w", err)
-			}
+			run := func() error {
+				connections, err := net.Connections("inet")
+				if err != nil {
+					return fmt.Errorf("failed to get network connection information: %w", err)
+				}
 
-			// Filter only LISTEN connections (include UDP only if -a option is set)
-			listeningConns := utils.FilterListeningConnections(connections, includeUDP)
+				listeningConns := utils.FilterListeningConnections(connections, includeUDP)
+				if len(listeningConns) == 0 {
+					fmt.Println("No listening ports found.")
+					return nil
+				}
 
-			// Check if there are any listening connections
-			if len(listeningConns) == 0 {
-				fmt.Println("No listening ports found.")
+				table := fmtter.Format(utils.SortConnectionsByPort(listeningConns))
+				fmt.Println(table)
 				return nil
 			}
 
-			// Sort by port number
-			sortedConns := utils.SortConnectionsByPort(listeningConns)
-
-			// Create table using formatter
-			table := fmtter.Format(sortedConns)
-			fmt.Println(table)
-
-			return nil
+			if watch {
+				return runWithWatch("ls", time.Duration(interval)*time.Second, run)
+			}
+			return run()
 		},
 	}
 
-	// Define -a, --all flag
 	cmd.Flags().BoolP("all", "a", false, "Include UDP connections")
+	cmd.Flags().BoolP("watch", "w", false, "Watch mode: refresh output periodically")
+	cmd.Flags().IntP("interval", "n", 2, "Refresh interval in seconds (used with -w)")
 
 	return cmd
 }

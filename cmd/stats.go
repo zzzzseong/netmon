@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/shirou/gopsutil/v3/net"
 	"github.com/spf13/cobra"
@@ -14,79 +15,78 @@ import (
 // newStatsCmd creates and returns the stats command.
 // It displays network statistics summary.
 func newStatsCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "stats",
 		Short: "Show network statistics summary",
 		Long:  `Display network statistics summary including connection counts, interfaces, and top processes.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Get all network connections
-			connections, err := net.Connections("inet")
-			if err != nil {
-				return fmt.Errorf("failed to get network connection information: %w", err)
-			}
+			watch, _ := cmd.Flags().GetBool("watch")
+			interval, _ := cmd.Flags().GetInt("interval")
 
-			// Count TCP and UDP connections
-			tcpCount := 0
-			udpCount := 0
-			for _, conn := range connections {
-		if utils.IsUDP(conn.Type) {
-			// UDP does not have a stable ESTABLISHED state like TCP.
-			if conn.Laddr.Port > 0 {
-				udpCount++
-			}
-			continue
-		}
-
-		if conn.Status == "ESTABLISHED" {
-			tcpCount++
-				}
-			}
-
-			// Count listening ports
-			listeningConns := utils.FilterListeningConnections(connections, true)
-			listeningCount := len(listeningConns)
-
-			// Get network interfaces
-			interfaces, err := net.Interfaces()
-			if err != nil {
-				return fmt.Errorf("failed to get network interface information: %w", err)
-			}
-			interfaceCount := len(interfaces)
-
-			// Get default gateway from routing table
+			fmtter := formatter.NewStatsFormatter()
 			routeProvider := provider.NewRouteProvider()
-			routes, err := routeProvider.GetRoutes()
-			defaultGateway := ""
-			if err == nil {
-				for _, route := range routes {
-					if route.Destination == "default" || route.Destination == "0.0.0.0/0" {
-						defaultGateway = route.Gateway
-						break
+
+			run := func() error {
+				connections, err := net.Connections("inet")
+				if err != nil {
+					return fmt.Errorf("failed to get network connection information: %w", err)
+				}
+
+				tcpCount := 0
+				udpCount := 0
+				for _, conn := range connections {
+					if utils.IsUDP(conn.Type) {
+						if conn.Laddr.Port > 0 {
+							udpCount++
+						}
+						continue
+					}
+					if conn.Status == "ESTABLISHED" {
+						tcpCount++
 					}
 				}
+
+				listeningCount := len(utils.FilterListeningConnections(connections, true))
+
+				interfaces, err := net.Interfaces()
+				if err != nil {
+					return fmt.Errorf("failed to get network interface information: %w", err)
+				}
+
+				defaultGateway := ""
+				if routes, err := routeProvider.GetRoutes(); err == nil {
+					for _, route := range routes {
+						if route.Destination == "default" || route.Destination == "0.0.0.0/0" {
+							defaultGateway = route.Gateway
+							break
+						}
+					}
+				}
+
+				stats := formatter.NetworkStats{
+					TCPConnections:    tcpCount,
+					UDPConnections:    udpCount,
+					ListeningPorts:    listeningCount,
+					NetworkInterfaces: len(interfaces),
+					DefaultGateway:    defaultGateway,
+					TopProcesses:      getTopProcessesByConnections(connections, 5),
+				}
+
+				fmt.Println(fmtter.Format(stats))
+				return nil
 			}
 
-			// Get top processes by connection count
-			topProcesses := getTopProcessesByConnections(connections, 5)
-
-			// Create stats object
-			stats := formatter.NetworkStats{
-				TCPConnections:    tcpCount,
-				UDPConnections:    udpCount,
-				ListeningPorts:    listeningCount,
-				NetworkInterfaces: interfaceCount,
-				DefaultGateway:    defaultGateway,
-				TopProcesses:      topProcesses,
+			if watch {
+				return runWithWatch("stats", time.Duration(interval)*time.Second, run)
 			}
-
-			// Format and display
-			fmtter := formatter.NewStatsFormatter()
-			output := fmtter.Format(stats)
-			fmt.Println(output)
-
-			return nil
+			return run()
 		},
 	}
+
+	cmd.Flags().BoolP("watch", "w", false, "Watch mode: refresh output periodically")
+	cmd.Flags().IntP("interval", "n", 2, "Refresh interval in seconds (used with -w)")
+
+	return cmd
 }
 
 // getTopProcessesByConnections returns the top N processes by connection count.

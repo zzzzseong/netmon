@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 	"netmon/formatter"
@@ -11,27 +12,36 @@ import (
 // newRouteCmd creates and returns the route command.
 // It displays system routing information with smart filtering.
 func newRouteCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "route",
 		Short: "Show routing table information",
 		Long:  `Display system routing information with smart filtering.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Get routing table through RouteProvider
+			watch, _ := cmd.Flags().GetBool("watch")
+			interval, _ := cmd.Flags().GetInt("interval")
+
 			routeProvider := provider.NewRouteProvider()
-			routes, err := routeProvider.GetRoutes()
-			if err != nil {
-				return fmt.Errorf("failed to get routing table information: %w", err)
+			fmtter := formatter.NewRouteTableFormatter()
+
+			run := func() error {
+				routes, err := routeProvider.GetRoutes()
+				if err != nil {
+					return fmt.Errorf("failed to get routing table information: %w", err)
+				}
+
+				fmt.Println(fmtter.Format(provider.FilterRoutes(routes)))
+				return nil
 			}
 
-			// Filter unnecessary routes (exclude single hosts, multicast, link-local, etc.)
-			routes = provider.FilterRoutes(routes)
-
-			// Output in table format using formatter
-			fmtter := formatter.NewRouteTableFormatter()
-			table := fmtter.Format(routes)
-			fmt.Println(table)
-
-			return nil
+			if watch {
+				return runWithWatch("route", time.Duration(interval)*time.Second, run)
+			}
+			return run()
 		},
 	}
+
+	cmd.Flags().BoolP("watch", "w", false, "Watch mode: refresh output periodically")
+	cmd.Flags().IntP("interval", "n", 2, "Refresh interval in seconds (used with -w)")
+
+	return cmd
 }
