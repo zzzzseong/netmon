@@ -34,6 +34,7 @@ func newRootCmd(cfg Config) *cobra.Command {
 	cmd.AddCommand(newDNSCmd())
 	cmd.AddCommand(newConnCmd())
 	cmd.AddCommand(newVersionCmd(cfg))
+	cmd.AddCommand(newUpdateCmd(cfg))
 
 	return cmd
 }
