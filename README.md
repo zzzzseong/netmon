@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.5.0-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Version](https://img.shields.io/badge/version-1.6.0-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/zzzzseong/netmon)
 
 *A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.*
@@ -496,6 +496,33 @@ Are you sure you want to shutdown this process?
 
 ---
 
+### 🔄 Update netmon
+
+Upgrade netmon to the latest version without re-running the install script:
+
+```bash
+netmon update
+```
+
+**Output:**
+```
+# Already on the latest version
+Checking for updates...
+Already up to date (v1.6.0)
+
+# Update available
+Checking for updates...
+Updating v1.5.0 → v1.6.0
+Downloading netmon-linux-amd64.tar.gz...
+Verifying checksum...
+Installing to /usr/local/bin/netmon...
+Updated to v1.6.0
+```
+
+> **Note:** If the install directory (e.g. `/usr/local/bin`) requires root access, netmon automatically retries with `sudo`.
+
+---
+
 ## 📚 Commands
 
 | Command | Description | Usage | Flags |
@@ -510,6 +537,7 @@ Are you sure you want to shutdown this process?
 | `shutdown` | Shutdown a process | `netmon shutdown <pid>` | - |
 | `traceroute` | Trace route to network host | `netmon traceroute <host>` | - |
 | `version` | Show version information | `netmon version` | - |
+| `update` | Update netmon to the latest version | `netmon update` | - |
 | `help` | Show help information | `netmon help` | - |
 
 ---
@@ -525,9 +553,16 @@ Are you sure you want to shutdown this process?
 
 ---
 
-## 🆕 What's New in v1.5.0
+## 🆕 What's New in v1.6.0
 
-Released: 2026-05-14
+Released: 2026-05-26
+
+- 🔄 **Self-Upgrade Command** - `netmon update` upgrades netmon in place with checksum verification, no need to re-run the install script
+- 🐛 **Install Script Fix** - Checksum verification no longer fails on Linux (tarball filename now matches SHA256SUMS entry)
+
+### Previous Releases
+
+**v1.5.0:**
 
 - 🪟 **Windows Installation Guide** - Full Windows download and installation documentation added
 - 🔍 **Find Command Fix** - Full command line now correctly displayed (ps -ef style) when finding processes
@@ -535,8 +570,6 @@ Released: 2026-05-14
 - 🛡️ **Route Filtering** - IPv6 routes properly excluded from routing table output on all platforms
 - 🔧 **Cross-Platform Reliability** - Resolved Windows CI failures (`go vet` unsafe.Pointer, binary extension)
 - ⚡ **Signal Handling** - Traceroute cancellation signal handling split by platform (Unix: SIGTERM+Interrupt, Windows: Interrupt only)
-
-### Previous Releases
 
 **v1.4.0:**
 
