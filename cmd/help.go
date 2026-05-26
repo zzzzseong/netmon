@@ -93,6 +93,35 @@ func printCustomHelp(cmd *cobra.Command, args []string, cfg Config) {
 		Render(commandsList.String())
 	fmt.Println(commandsBox)
 
+	// Watch mode tips
+	tipsHeader := lipgloss.NewStyle().
+		Foreground(style.InfoColor).
+		Bold(true).
+		MarginBottom(1).
+		Render("Watch Mode:")
+	fmt.Println(tipsHeader)
+
+	tips := []struct{ cmd, desc string }{
+		{"  netmon ls -w", "refresh every 2s (default)"},
+		{"  netmon ls -w -n 5", "refresh every 5s"},
+	}
+	var tipsList strings.Builder
+	for i, t := range tips {
+		cmdPart := style.CommandStyle.Render(fmt.Sprintf("%-24s", t.cmd))
+		descPart := style.DescStyle.Render(t.desc)
+		tipsList.WriteString(cmdPart + descPart)
+		if i < len(tips)-1 {
+			tipsList.WriteString("\n")
+		}
+	}
+	tipsBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(style.InfoColor).
+		Padding(1, 2).
+		MarginBottom(1).
+		Render(tipsList.String())
+	fmt.Println(tipsBox)
+
 	// Footer
 	footerText := "For more information, visit: https://github.com/zzzzseong/netmon"
 	footerStyle := style.FooterTextStyle
