@@ -20,6 +20,8 @@ func runWithWatch(name string, interval time.Duration, fn func() error) error {
 	for {
 		if first {
 			first = false
+			// Clear screen once on entry so prior shell history doesn't bleed through
+			fmt.Print("\033[H\033[2J")
 		} else {
 			// Move cursor to top-left and overwrite in place — no blank-screen flash
 			fmt.Print("\033[H")
