@@ -12,11 +12,15 @@ import (
 )
 
 // ConnectionTableFormatter formats active connections in table format.
-type ConnectionTableFormatter struct{}
+// It holds a ProcessCache so that *process.Process objects are reused across
+// Format calls, enabling gopsutil to compute accurate CPU deltas in watch mode.
+type ConnectionTableFormatter struct {
+	cache *utils.ProcessCache
+}
 
 // NewConnectionTableFormatter creates a new ConnectionTableFormatter instance.
 func NewConnectionTableFormatter() *ConnectionTableFormatter {
-	return &ConnectionTableFormatter{}
+	return &ConnectionTableFormatter{cache: utils.NewProcessCache()}
 }
 
 // Format formats active connection information as a table.
@@ -33,8 +37,8 @@ func (f *ConnectionTableFormatter) Format(connections []net.ConnectionStat) stri
 	// Pre-allocate rows slice
 	rows := make([][]string, 0, len(connections))
 
-	// Process info cache
-	processCache := make(map[int32]utils.ProcessInfo)
+	// per-call dedup cache (avoids double lookup for same PID in one render)
+	seen := make(map[int32]utils.ProcessInfo)
 
 	for _, conn := range connections {
 		// Protocol
@@ -49,15 +53,13 @@ func (f *ConnectionTableFormatter) Format(connections []net.ConnectionStat) stri
 		remoteAddr := fmt.Sprintf("%s:%d", conn.Raddr.IP, conn.Raddr.Port)
 		remoteAddrStyled := lipgloss.NewStyle().Foreground(style.WarningColor).Render(remoteAddr)
 
-		// Process info (with caching)
 		pid := int32(conn.Pid)
 		var processInfo utils.ProcessInfo
-
-		if info, ok := processCache[pid]; ok {
+		if info, ok := seen[pid]; ok {
 			processInfo = info
 		} else {
-			processInfo = utils.GetProcessInfo(pid)
-			processCache[pid] = processInfo
+			processInfo = f.cache.GetProcessInfo(pid)
+			seen[pid] = processInfo
 		}
 
 		// PID styling

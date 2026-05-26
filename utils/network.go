@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/shirou/gopsutil/v3/net"
 	"github.com/shirou/gopsutil/v3/process"
@@ -76,66 +77,80 @@ func FilterEstablishedConnections(connections []net.ConnectionStat) []net.Connec
 }
 
 
-// GetProcessInfo retrieves process information for the given PID.
-// It returns a ProcessInfo struct with name, username, CPU and memory usage.
-// If the process cannot be found or accessed, it returns default values ("N/A").
-// This function silently handles errors to ensure it always returns a valid ProcessInfo.
-func GetProcessInfo(pid int32) ProcessInfo {
-	// 기본값 설정
-	info := ProcessInfo{
-		Name:       "N/A",
-		Username:   "N/A",
-		CPUPercent: "N/A",
-		MemPercent: "N/A",
-	}
+// ProcessCache holds *process.Process objects across calls so that gopsutil can
+// compute CPU deltas correctly. CPUPercent() always returns 0 on first call to
+// a new process object; reusing the same object gives accurate values.
+type ProcessCache struct {
+	mu    sync.Mutex
+	procs map[int32]*process.Process
+}
 
+// NewProcessCache creates an empty ProcessCache.
+func NewProcessCache() *ProcessCache {
+	return &ProcessCache{procs: make(map[int32]*process.Process)}
+}
+
+// GetProcessInfo returns process info, reusing the cached *process.Process so
+// that CPU percent is computed as a delta from the previous call.
+func (c *ProcessCache) GetProcessInfo(pid int32) ProcessInfo {
+	info := ProcessInfo{Name: "N/A", Username: "N/A", CPUPercent: "N/A", MemPercent: "N/A", Cmdline: "N/A"}
 	if pid <= 0 {
 		return info
 	}
 
-	proc, err := process.NewProcess(pid)
-	if err != nil {
-		// Process not found or inaccessible, return default values
+	c.mu.Lock()
+	proc, ok := c.procs[pid]
+	if !ok {
+		var err error
+		proc, err = process.NewProcess(pid)
+		if err != nil {
+			c.mu.Unlock()
+			return info
+		}
+		c.procs[pid] = proc
+	}
+	c.mu.Unlock()
+
+	return fetchProcessInfo(proc)
+}
+
+// GetProcessInfo retrieves process information for the given PID.
+// Creates a new process object each call — CPUPercent will be 0 on this first
+// call. Use ProcessCache.GetProcessInfo for accurate CPU values across calls.
+func GetProcessInfo(pid int32) ProcessInfo {
+	info := ProcessInfo{Name: "N/A", Username: "N/A", CPUPercent: "N/A", MemPercent: "N/A", Cmdline: "N/A"}
+	if pid <= 0 {
 		return info
 	}
+	proc, err := process.NewProcess(pid)
+	if err != nil {
+		return info
+	}
+	return fetchProcessInfo(proc)
+}
 
-	// 프로세스 이름 (필수 정보이므로 먼저 가져옴)
-	name, nameErr := proc.Name()
-	if nameErr == nil {
+func fetchProcessInfo(proc *process.Process) ProcessInfo {
+	info := ProcessInfo{Name: "N/A", Username: "N/A", CPUPercent: "N/A", MemPercent: "N/A", Cmdline: "N/A"}
+
+	if name, err := proc.Name(); err == nil {
 		info.Name = name
 	}
-
-	// 사용자 이름
-	username, userErr := proc.Username()
-	if userErr == nil {
-		info.Username = username
+	if user, err := proc.Username(); err == nil {
+		info.Username = user
 	}
-
-	// CPU 사용률 (에러 무시)
-	cpu, cpuErr := proc.CPUPercent()
-	if cpuErr == nil {
+	if cpu, err := proc.CPUPercent(); err == nil {
 		info.CPUPercent = fmt.Sprintf("%.1f%%", cpu)
 	}
-
-	// 메모리 사용률 (에러 무시)
-	mem, memErr := proc.MemoryPercent()
-	if memErr == nil {
+	if mem, err := proc.MemoryPercent(); err == nil {
 		info.MemPercent = fmt.Sprintf("%.1f%%", mem)
 	}
-
-	// 명령어 라인 전체 가져오기 (ps -ef처럼)
-	cmdline, cmdlineErr := proc.Cmdline()
-	if cmdlineErr == nil && cmdline != "" {
-		// 너무 긴 명령어 라인은 잘라내기 (터미널 출력 방지)
-		const maxCmdlineLength = 500
-		if len(cmdline) > maxCmdlineLength {
-			cmdline = cmdline[:maxCmdlineLength] + "..."
+	const maxCmdlineLength = 500
+	if cmd, err := proc.Cmdline(); err == nil && cmd != "" {
+		if len(cmd) > maxCmdlineLength {
+			cmd = cmd[:maxCmdlineLength] + "..."
 		}
-		info.Cmdline = cmdline
-	} else {
-		info.Cmdline = "N/A"
+		info.Cmdline = cmd
 	}
-
 	return info
 }
 

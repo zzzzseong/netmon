@@ -19,11 +19,15 @@ var (
 )
 
 // PortTableFormatter formats port listings in table format.
-type PortTableFormatter struct{}
+// It holds a ProcessCache so that *process.Process objects are reused across
+// Format calls, enabling gopsutil to compute accurate CPU deltas in watch mode.
+type PortTableFormatter struct {
+	cache *utils.ProcessCache
+}
 
 // NewPortTableFormatter creates a new PortTableFormatter instance.
 func NewPortTableFormatter() *PortTableFormatter {
-	return &PortTableFormatter{}
+	return &PortTableFormatter{cache: utils.NewProcessCache()}
 }
 
 // getStatusStyled 상태에 따른 스타일 적용
@@ -67,8 +71,8 @@ func (f *PortTableFormatter) Format(connections interface{}) string {
 	// 사이즈가 확정된 슬라이스로 메모리 할당 최적화
 	rows := make([][]string, 0, len(connSlice))
 	
-	// 프로세스 정보 캐싱을 위한 맵
-	processCache := make(map[int32]utils.ProcessInfo)
+	// per-call dedup cache (avoids double lookup for same PID in one render)
+	seen := make(map[int32]utils.ProcessInfo)
 
 	for _, conn := range connSlice {
 		// 프로토콜 및 주소
@@ -78,20 +82,19 @@ func (f *PortTableFormatter) Format(connections interface{}) string {
 		// 상태 스타일링
 		statusStr := getStatusStyled(conn.Status)
 
-		// 프로세스 정보 가져오기 (캐싱 적용)
-		pid := int(conn.Pid)
+		pid := int32(conn.Pid)
 		var processInfo utils.ProcessInfo
-		
-		if info, ok := processCache[int32(pid)]; ok {
+		if info, ok := seen[pid]; ok {
 			processInfo = info
 		} else {
-			processInfo = utils.GetProcessInfo(int32(pid))
-			processCache[int32(pid)] = processInfo
+			processInfo = f.cache.GetProcessInfo(pid)
+			seen[pid] = processInfo
 		}
+		pid32 := int(pid)
 
 		// PID 스타일링
-		pidStr := fmt.Sprintf("%d", pid)
-		if pid > 0 {
+		pidStr := fmt.Sprintf("%d", pid32)
+		if pid32 > 0 {
 			pidStr = pidStyle.Render(pidStr)
 		}
 
