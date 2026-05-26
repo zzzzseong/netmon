@@ -185,16 +185,17 @@ download_binary() {
     trap "rm -rf $TEMP_DIR" EXIT
     
     # Download
-    if ! curl -L -f -o "${TEMP_DIR}/netmon.tar.gz" "$DOWNLOAD_URL"; then
+    local tarball="netmon-${PLATFORM}.tar.gz"
+    if ! curl -L -f -o "${TEMP_DIR}/${tarball}" "$DOWNLOAD_URL"; then
         echo -e "${RED}❌ Download failed. Please check if the version exists.${NC}"
         exit 1
     fi
 
-    verify_checksum "${TEMP_DIR}/netmon.tar.gz"
-    
+    verify_checksum "${TEMP_DIR}/${tarball}"
+
     # Extract
     echo -e "${BLUE}📦 Extracting...${NC}"
-    tar -xzf "${TEMP_DIR}/netmon.tar.gz" -C "${TEMP_DIR}"
+    tar -xzf "${TEMP_DIR}/${tarball}" -C "${TEMP_DIR}"
     
     # Check install directory
     if [ ! -d "$INSTALL_DIR" ]; then
