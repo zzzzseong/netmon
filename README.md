@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.6.5-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Version](https://img.shields.io/badge/version-1.6.6-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/zzzzseong/netmon)
 
 *A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.*
@@ -553,13 +553,17 @@ Updated to v1.6.0
 
 ---
 
-## 🆕 What's New in v1.6.5
+## 🆕 What's New in v1.6.6
 
 Released: 2026-05-26
 
-- 🔧 **Watch Mode Flicker Fix (again)** - Alternate screen is cleared once on entry, then uses in-place overwriting on each refresh — combining flicker-free rendering with scroll corruption prevention
+- 📄 **Watch Mode Pagination** - When table height exceeds terminal height, output is automatically split into pages. Navigate with `[` / `]` or left/right arrow keys. Column headers and borders are preserved on every page
 
 ### Previous Releases
+
+**v1.6.5:**
+
+- 🔧 **Watch Mode Flicker Fix** - Alternate screen cleared once on entry, in-place overwriting on each refresh
 
 **v1.6.4:**
 
