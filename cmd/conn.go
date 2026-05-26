@@ -23,27 +23,27 @@ func newConnCmd() *cobra.Command {
 
 			fmtter := formatter.NewConnectionTableFormatter()
 
-			run := func() error {
+			run := func() (string, error) {
 				connections, err := net.Connections("inet")
 				if err != nil {
-					return fmt.Errorf("failed to get network connection information: %w", err)
+					return "", fmt.Errorf("failed to get network connection information: %w", err)
 				}
-
 				establishedConns := utils.FilterEstablishedConnections(connections)
 				if len(establishedConns) == 0 {
-					fmt.Println("No active connections found.")
-					return nil
+					return "No active connections found.", nil
 				}
-
-				table := fmtter.Format(establishedConns)
-				fmt.Println(table)
-				return nil
+				return fmtter.Format(establishedConns), nil
 			}
 
 			if watch {
 				return runWithWatch("conn", time.Duration(interval)*time.Second, run)
 			}
-			return run()
+			out, err := run()
+			if err != nil {
+				return err
+			}
+			fmt.Println(out)
+			return nil
 		},
 	}
 

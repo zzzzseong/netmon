@@ -24,24 +24,26 @@ func newIPCmd() *cobra.Command {
 
 			fmtter := formatter.NewInterfaceTableFormatter()
 
-			run := func() error {
+			run := func() (string, error) {
 				interfaces, err := net.Interfaces()
 				if err != nil {
-					return fmt.Errorf("failed to get network interface information: %w", err)
+					return "", fmt.Errorf("failed to get network interface information: %w", err)
 				}
-
 				sort.Slice(interfaces, func(i, j int) bool {
 					return interfaces[i].Name < interfaces[j].Name
 				})
-
-				fmt.Println(fmtter.Format(interfaces, showAll))
-				return nil
+				return fmtter.Format(interfaces, showAll), nil
 			}
 
 			if watch {
 				return runWithWatch("ip", time.Duration(interval)*time.Second, run)
 			}
-			return run()
+			out, err := run()
+			if err != nil {
+				return err
+			}
+			fmt.Println(out)
+			return nil
 		},
 	}
 

@@ -23,20 +23,23 @@ func newRouteCmd() *cobra.Command {
 			routeProvider := provider.NewRouteProvider()
 			fmtter := formatter.NewRouteTableFormatter()
 
-			run := func() error {
+			run := func() (string, error) {
 				routes, err := routeProvider.GetRoutes()
 				if err != nil {
-					return fmt.Errorf("failed to get routing table information: %w", err)
+					return "", fmt.Errorf("failed to get routing table information: %w", err)
 				}
-
-				fmt.Println(fmtter.Format(provider.FilterRoutes(routes)))
-				return nil
+				return fmtter.Format(provider.FilterRoutes(routes)), nil
 			}
 
 			if watch {
 				return runWithWatch("route", time.Duration(interval)*time.Second, run)
 			}
-			return run()
+			out, err := run()
+			if err != nil {
+				return err
+			}
+			fmt.Println(out)
+			return nil
 		},
 	}
 

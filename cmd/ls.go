@@ -24,27 +24,27 @@ func newLsCmd() *cobra.Command {
 
 			fmtter := formatter.NewPortTableFormatter()
 
-			run := func() error {
+			run := func() (string, error) {
 				connections, err := net.Connections("inet")
 				if err != nil {
-					return fmt.Errorf("failed to get network connection information: %w", err)
+					return "", fmt.Errorf("failed to get network connection information: %w", err)
 				}
-
 				listeningConns := utils.FilterListeningConnections(connections, includeUDP)
 				if len(listeningConns) == 0 {
-					fmt.Println("No listening ports found.")
-					return nil
+					return "No listening ports found.", nil
 				}
-
-				table := fmtter.Format(utils.SortConnectionsByPort(listeningConns))
-				fmt.Println(table)
-				return nil
+				return fmtter.Format(utils.SortConnectionsByPort(listeningConns)), nil
 			}
 
 			if watch {
 				return runWithWatch("ls", time.Duration(interval)*time.Second, run)
 			}
-			return run()
+			out, err := run()
+			if err != nil {
+				return err
+			}
+			fmt.Println(out)
+			return nil
 		},
 	}
 

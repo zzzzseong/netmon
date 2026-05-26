@@ -26,10 +26,10 @@ func newStatsCmd() *cobra.Command {
 			fmtter := formatter.NewStatsFormatter()
 			routeProvider := provider.NewRouteProvider()
 
-			run := func() error {
+			run := func() (string, error) {
 				connections, err := net.Connections("inet")
 				if err != nil {
-					return fmt.Errorf("failed to get network connection information: %w", err)
+					return "", fmt.Errorf("failed to get network connection information: %w", err)
 				}
 
 				tcpCount := 0
@@ -50,7 +50,7 @@ func newStatsCmd() *cobra.Command {
 
 				interfaces, err := net.Interfaces()
 				if err != nil {
-					return fmt.Errorf("failed to get network interface information: %w", err)
+					return "", fmt.Errorf("failed to get network interface information: %w", err)
 				}
 
 				defaultGateway := ""
@@ -72,14 +72,18 @@ func newStatsCmd() *cobra.Command {
 					TopProcesses:      getTopProcessesByConnections(connections, 5),
 				}
 
-				fmt.Println(fmtter.Format(stats))
-				return nil
+				return fmtter.Format(stats), nil
 			}
 
 			if watch {
 				return runWithWatch("stats", time.Duration(interval)*time.Second, run)
 			}
-			return run()
+			out, err := run()
+			if err != nil {
+				return err
+			}
+			fmt.Println(out)
+			return nil
 		},
 	}
 
