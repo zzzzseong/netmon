@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.6.3-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Version](https://img.shields.io/badge/version-1.6.4-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/zzzzseong/netmon)
 
 *A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.*
@@ -553,14 +553,19 @@ Updated to v1.6.0
 
 ---
 
-## 🆕 What's New in v1.6.3
+## 🆕 What's New in v1.6.4
 
 Released: 2026-05-26
 
-- 🐛 **CPU% Always 0 Fix** - CPU usage now shows accurate values in watch mode (was always 0 due to gopsutil needing a persistent process object for delta calculation)
-- 🖥️ **Watch Mode Screen Fix** - Screen is cleared once on watch mode entry so prior shell history no longer bleeds through
+- 🖥️ **Watch Mode Alternate Screen** - Switched to terminal alternate screen buffer (`ESC[?1049h`), preventing scroll corruption when table height exceeds terminal height. Original screen is fully restored on exit
+- ⚡ **Default Interval 1s** - Watch mode refresh interval default changed from 2s to 1s
 
 ### Previous Releases
+
+**v1.6.3:**
+
+- 🐛 **CPU% Always 0 Fix** - CPU usage now shows accurate values in watch mode
+- 🖥️ **Watch Mode Screen Fix** - Screen cleared once on entry so prior shell history no longer bleeds through
 
 **v1.6.2:**
 
