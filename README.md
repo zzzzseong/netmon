@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.6.1-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Version](https://img.shields.io/badge/version-1.6.2-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/zzzzseong/netmon)
 
 *A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.*
@@ -553,13 +553,18 @@ Updated to v1.6.0
 
 ---
 
-## 🆕 What's New in v1.6.1
+## 🆕 What's New in v1.6.2
 
 Released: 2026-05-26
 
-- 👁️ **Watch Mode** - `--watch` / `-w` flag added to `ls`, `conn`, `stats`, `ip`, `route` commands. Refresh interval configurable with `-n` (default: 2s)
+- 🔧 **Watch Mode Flicker Fix** - Eliminated screen flicker in watch mode by overwriting in place instead of clearing the full screen
+- 💡 **Watch Mode Help** - Watch mode usage guide now shown in `netmon` help output
 
 ### Previous Releases
+
+**v1.6.1:**
+
+- 👁️ **Watch Mode** - `--watch` / `-w` flag added to `ls`, `conn`, `stats`, `ip`, `route` commands. Refresh interval configurable with `-n` (default: 2s)
 
 **v1.6.0:**
 

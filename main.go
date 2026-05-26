@@ -5,7 +5,7 @@ import (
 )
 
 // Version 정보
-const Version = "1.6.1"
+const Version = "1.6.2"
 
 // BuildDate is set at build time via -ldflags "-X main.BuildDate=<date>"
 var BuildDate = "dev"
