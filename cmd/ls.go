@@ -50,7 +50,7 @@ func newLsCmd() *cobra.Command {
 
 	cmd.Flags().BoolP("all", "a", false, "Include UDP connections")
 	cmd.Flags().BoolP("watch", "w", false, "Watch mode: refresh output periodically")
-	cmd.Flags().IntP("interval", "n", 2, "Refresh interval in seconds (used with -w)")
+	cmd.Flags().IntP("interval", "n", 1, "Refresh interval in seconds (used with -w)")
 
 	return cmd
 }
