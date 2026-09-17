@@ -1,0 +1,2 @@
+# Keep LF line endings on every platform so gofmt and text-comparing tests behave the same on Windows runners.
+* text=auto eol=lf

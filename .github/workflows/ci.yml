@@ -26,6 +26,8 @@ jobs:
         run: go build -v ./...
 
       - name: Check formatting
+        # Formatting is OS-independent; run it once on Linux.
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           unformatted=$(gofmt -l .)
