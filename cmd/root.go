@@ -17,6 +17,11 @@ func newRootCmd(cfg Config) *cobra.Command {
 			// No arguments provided, show help
 			printCustomHelp(cmd, args, cfg)
 		},
+		// Runs after argument validation, so usage is printed only for argument
+		// errors; runtime errors (network failures, missing processes) show the error alone.
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			cmd.SilenceUsage = true
+		},
 	}
 
 	// Hide completion command from help (but keep it functional for Homebrew/install scripts)

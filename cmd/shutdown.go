@@ -7,8 +7,8 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/manifoldco/promptui"
-	"github.com/shirou/gopsutil/v3/net"
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v4/net"
+	"github.com/shirou/gopsutil/v4/process"
 	"github.com/spf13/cobra"
 	"netmon/formatter"
 	"netmon/style"
@@ -114,8 +114,14 @@ func newShutdownCmd() *cobra.Command {
 						}
 					}
 					if !terminated {
-						// Force kill if still running
-						_ = proc.Kill()
+						// Force kill if still running, and verify it actually died
+						if err := proc.Kill(); err != nil {
+							return fmt.Errorf("process did not exit after SIGTERM and SIGKILL failed: %w", err)
+						}
+						time.Sleep(200 * time.Millisecond)
+						if running, _ := proc.IsRunning(); running {
+							return fmt.Errorf("process %d is still running after SIGKILL", pid)
+						}
 					}
 				}
 

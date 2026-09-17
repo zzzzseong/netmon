@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/x/ansi"
 	"golang.org/x/term"
 )
 
@@ -18,8 +19,13 @@ const (
 )
 
 // runWithWatch runs fn on every interval, paginating output that exceeds the
-// terminal height. [ / ] and left/right arrow keys navigate pages.
+// terminal height. [ / ] and left/right arrow keys navigate pages; q or Ctrl+C exits.
+// If a refresh fails, the previous output stays on screen and the error is shown in the header.
 func runWithWatch(name string, interval time.Duration, fn func() (string, error)) error {
+	if interval <= 0 {
+		return fmt.Errorf("interval must be at least 1 second")
+	}
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
@@ -40,13 +46,20 @@ func runWithWatch(name string, interval time.Duration, fn func() (string, error)
 
 	page := 0
 	content := ""
+	var lastErr error
+
+	refresh := func() {
+		out, err := fn()
+		lastErr = err
+		if err == nil {
+			content = out
+		}
+	}
 
 	// Initial fetch
-	if out, err := fn(); err == nil {
-		content = out
-	}
+	refresh()
 	fmt.Print("\033[H\033[2J")
-	page = renderWatch(name, interval, content, page)
+	page = renderWatch(name, interval, content, lastErr, page)
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -60,12 +73,10 @@ func runWithWatch(name string, interval time.Duration, fn func() (string, error)
 			if page < 0 {
 				page = 0
 			}
-			page = renderWatch(name, interval, content, page)
+			page = renderWatch(name, interval, content, lastErr, page)
 		case <-ticker.C:
-			if out, err := fn(); err == nil {
-				content = out
-			}
-			page = renderWatch(name, interval, content, page)
+			refresh()
+			page = renderWatch(name, interval, content, lastErr, page)
 		}
 	}
 }
@@ -110,15 +121,22 @@ func readWatchKeys(navCh chan<- int, cancel context.CancelFunc) {
 }
 
 // renderWatch prints the current page and returns the (possibly clamped) page index.
-func renderWatch(name string, interval time.Duration, content string, page int) int {
-	_, termHeight, err := term.GetSize(int(os.Stdout.Fd()))
+func renderWatch(name string, interval time.Duration, content string, refreshErr error, page int) int {
+	termWidth, termHeight, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil || termHeight <= 0 {
-		termHeight = 24
+		termWidth, termHeight = 80, 24
 	}
 
-	fmt.Print("\033[H")
-	fmt.Printf("netmon %s  —  every %.0fs  —  %s  —  [ ] navigate  Ctrl+C to stop\n\n",
+	header := fmt.Sprintf("netmon %s  —  every %.0fs  —  %s  —  [ ] navigate  q or Ctrl+C to stop",
 		name, interval.Seconds(), time.Now().Format("2006-01-02 15:04:05"))
+	if refreshErr != nil {
+		header += "  —  ⚠ refresh failed: " + refreshErr.Error()
+	}
+	// Keep the header on one line so the pagination math below stays valid.
+	header = ansi.Truncate(header, termWidth, "…")
+
+	fmt.Print("\033[H")
+	fmt.Printf("%s\n\n", header)
 
 	lines := trimLines(content)
 	available := termHeight - watchHeaderLines
@@ -131,48 +149,9 @@ func renderWatch(name string, interval time.Duration, content string, page int) 
 	}
 
 	// Reserve a line for the pagination footer
-	available -= watchFooterLines
-
-	var pages [][]string
-	if isTableOutput(lines) {
-		// Preserve top border + header + separator on every page; bottom border at end
-		head := lines[:3]
-		data := lines[3 : len(lines)-1]
-		bottom := lines[len(lines)-1]
-		pageSize := available - tableChrome
-		if pageSize < 1 {
-			pageSize = 1
-		}
-		for i := 0; i < len(data); i += pageSize {
-			end := i + pageSize
-			if end > len(data) {
-				end = len(data)
-			}
-			p := make([]string, 0, 3+end-i+1)
-			p = append(p, head...)
-			p = append(p, data[i:end]...)
-			p = append(p, bottom)
-			pages = append(pages, p)
-		}
-	} else {
-		// Non-table (e.g. stats box): simple line-based pagination
-		pageSize := available
-		if pageSize < 1 {
-			pageSize = 1
-		}
-		for i := 0; i < len(lines); i += pageSize {
-			end := i + pageSize
-			if end > len(lines) {
-				end = len(lines)
-			}
-			pages = append(pages, lines[i:end])
-		}
-	}
+	pages := paginateWatch(lines, available-watchFooterLines)
 
 	totalPages := len(pages)
-	if totalPages == 0 {
-		totalPages = 1
-	}
 	if page >= totalPages {
 		page = totalPages - 1
 	}
@@ -187,6 +166,38 @@ func renderWatch(name string, interval time.Duration, content string, page int) 
 	return page
 }
 
+// paginateWatch splits lines into pages that each fit in available lines.
+// Table output keeps its top border, column headers, separator and bottom
+// border on every page; anything else is split line by line. Always returns
+// at least one page.
+func paginateWatch(lines []string, available int) [][]string {
+	var pages [][]string
+	if isTableOutput(lines) {
+		head := lines[:3]
+		data := lines[3 : len(lines)-1]
+		bottom := lines[len(lines)-1]
+		pageSize := max(available-tableChrome, 1)
+		for i := 0; i < len(data); i += pageSize {
+			end := min(i+pageSize, len(data))
+			p := make([]string, 0, 3+end-i+1)
+			p = append(p, head...)
+			p = append(p, data[i:end]...)
+			p = append(p, bottom)
+			pages = append(pages, p)
+		}
+	} else {
+		pageSize := max(available, 1)
+		for i := 0; i < len(lines); i += pageSize {
+			end := min(i+pageSize, len(lines))
+			pages = append(pages, lines[i:end])
+		}
+	}
+	if len(pages) == 0 {
+		pages = [][]string{lines}
+	}
+	return pages
+}
+
 // isTableOutput returns true when lines look like a lipgloss table
 // (╭ top, ├ separator on line 2, ╰ bottom).
 func isTableOutput(lines []string) bool {
@@ -199,6 +210,5 @@ func isTableOutput(lines []string) bool {
 }
 
 func trimLines(s string) []string {
-	lines := strings.Split(strings.TrimRight(s, "\n"), "\n")
-	return lines
+	return strings.Split(strings.TrimRight(s, "\n"), "\n")
 }

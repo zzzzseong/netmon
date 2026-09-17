@@ -4,11 +4,13 @@ import (
 	"netmon/cmd"
 )
 
-// Version 정보
-const Version = "1.6.6"
-
-// BuildDate is set at build time via -ldflags "-X main.BuildDate=<date>"
-var BuildDate = "dev"
+// Version and BuildDate are injected by the release workflow via
+// -ldflags "-X main.Version=<semver> -X main.BuildDate=<date>".
+// Source builds without ldflags report "dev".
+var (
+	Version   = "dev"
+	BuildDate = "unknown"
+)
 
 func main() {
 	// Create configuration with version information

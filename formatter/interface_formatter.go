@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
-	"github.com/shirou/gopsutil/v3/net"
+	"github.com/shirou/gopsutil/v4/net"
 	stdnet "net"
 	"netmon/style"
 )
@@ -97,22 +95,5 @@ func (f *InterfaceTableFormatter) Format(interfaces []net.InterfaceStat, showAll
 		})
 	}
 
-	// 헤더 생성
-	headerStyle := style.HeaderStyle
-	headerStyle = headerStyle.Align(lipgloss.Center)
-	styledHeaders := make([]string, len(InterfaceTableColumns))
-	for i, col := range InterfaceTableColumns {
-		styledHeaders[i] = headerStyle.Width(col.Width).Render(col.Title)
-	}
-
-	// 테이블 생성 및 스타일링
-	t := table.New().
-		Border(lipgloss.RoundedBorder()).
-		BorderStyle(style.TableBorderStyle).
-		StyleFunc(GetTableRowStyle).
-		Headers(styledHeaders...).
-		Rows(rows...).
-		Width(style.TableWidthInterface)
-
-	return t.String()
+	return CreateTable(rows, InterfaceTableColumns)
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/shirou/gopsutil/v3/net"
+	"github.com/shirou/gopsutil/v4/net"
 	"github.com/spf13/cobra"
 	"netmon/formatter"
 	"netmon/utils"
@@ -23,16 +23,17 @@ func newConnCmd() *cobra.Command {
 
 			fmtter := formatter.NewConnectionTableFormatter()
 
+			var shown []net.ConnectionStat
 			run := func() (string, error) {
 				connections, err := net.Connections("inet")
 				if err != nil {
 					return "", fmt.Errorf("failed to get network connection information: %w", err)
 				}
-				establishedConns := utils.FilterEstablishedConnections(connections)
-				if len(establishedConns) == 0 {
+				shown = utils.FilterEstablishedConnections(connections)
+				if len(shown) == 0 {
 					return "No active connections found.", nil
 				}
-				return fmtter.Format(establishedConns), nil
+				return fmtter.Format(shown), nil
 			}
 
 			if watch {
@@ -43,6 +44,9 @@ func newConnCmd() *cobra.Command {
 				return err
 			}
 			fmt.Println(out)
+			if hint := hiddenPIDHint(shown); hint != "" {
+				fmt.Println(hint)
+			}
 			return nil
 		},
 	}

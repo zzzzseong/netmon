@@ -5,9 +5,13 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
 	"netmon/style"
 	"netmon/utils"
+)
+
+var (
+	dnsRecordTypeStyle = lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
+	dnsValueStyle      = lipgloss.NewStyle().Foreground(style.InfoColor)
 )
 
 // DNSFormatter formats DNS lookup results.
@@ -41,97 +45,26 @@ func (f *DNSFormatter) Format(result utils.DNSResult) string {
 		return builder.String()
 	}
 
-	// Build table rows
+	// Build table rows, one per record
 	rows := [][]string{}
-
-	// Add A records (IPv4)
-	if len(result.ARecords) > 0 {
-		recordTypeStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
-		valueStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
-
-		for _, ip := range result.ARecords {
+	addRows := func(recordType string, values []string) {
+		for _, v := range values {
 			rows = append(rows, []string{
-				recordTypeStyle.Render("A"),
-				valueStyle.Render(ip),
+				dnsRecordTypeStyle.Render(recordType),
+				dnsValueStyle.Render(v),
 			})
 		}
 	}
 
-	// Add AAAA records (IPv6)
-	if len(result.AAAARecords) > 0 {
-		recordTypeStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
-		valueStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
-
-		for _, ip := range result.AAAARecords {
-			rows = append(rows, []string{
-				recordTypeStyle.Render("AAAA"),
-				valueStyle.Render(ip),
-			})
-		}
-	}
-
-	// Add PTR records (reverse DNS)
-	if len(result.PTRRecords) > 0 {
-		recordTypeStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
-		valueStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
-
-		for _, name := range result.PTRRecords {
-			rows = append(rows, []string{
-				recordTypeStyle.Render("PTR"),
-				valueStyle.Render(name),
-			})
-		}
-	}
-
-	// Add CNAME record
+	addRows("A", result.ARecords)
+	addRows("AAAA", result.AAAARecords)
+	addRows("PTR", result.PTRRecords)
 	if result.CNAMERecord != "" {
-		recordTypeStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
-		valueStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
-
-		rows = append(rows, []string{
-			recordTypeStyle.Render("CNAME"),
-			valueStyle.Render(result.CNAMERecord),
-		})
+		addRows("CNAME", []string{result.CNAMERecord})
 	}
-
-	// Add MX records
-	if len(result.MXRecords) > 0 {
-		recordTypeStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
-		valueStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
-
-		for _, mx := range result.MXRecords {
-			rows = append(rows, []string{
-				recordTypeStyle.Render("MX"),
-				valueStyle.Render(mx),
-			})
-		}
-	}
-
-	// Add NS records
-	if len(result.NSRecords) > 0 {
-		recordTypeStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
-		valueStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
-
-		for _, ns := range result.NSRecords {
-			rows = append(rows, []string{
-				recordTypeStyle.Render("NS"),
-				valueStyle.Render(ns),
-			})
-		}
-	}
-
-	// Add TXT records
-	if len(result.TXTRecords) > 0 {
-		recordTypeStyle := lipgloss.NewStyle().Foreground(style.SecondaryColor).Bold(true)
-		valueStyle := lipgloss.NewStyle().Foreground(style.InfoColor)
-
-		for _, txt := range result.TXTRecords {
-			rows = append(rows, []string{
-				recordTypeStyle.Render("TXT"),
-				valueStyle.Render(txt),
-			})
-		}
-	}
+	addRows("MX", result.MXRecords)
+	addRows("NS", result.NSRecords)
+	addRows("TXT", result.TXTRecords)
 
 	// If no records found
 	if len(rows) == 0 {
@@ -141,24 +74,7 @@ func (f *DNSFormatter) Format(result utils.DNSResult) string {
 		return builder.String()
 	}
 
-	// Create table headers
-	headerStyle = style.HeaderStyle
-	headerStyle = headerStyle.Align(lipgloss.Center)
-	styledHeaders := make([]string, len(DNSTableColumns))
-	for i, col := range DNSTableColumns {
-		styledHeaders[i] = headerStyle.Width(col.Width).Render(col.Title)
-	}
-
-	// Create and style table
-	t := table.New().
-		Border(lipgloss.RoundedBorder()).
-		BorderStyle(style.TableBorderStyle).
-		StyleFunc(GetTableRowStyle).
-		Headers(styledHeaders...).
-		Rows(rows...).
-		Width(style.TableWidthDNS)
-
-	builder.WriteString(t.String())
+	builder.WriteString(CreateTable(rows, DNSTableColumns))
 	builder.WriteString("\n\n")
 
 	// Response time

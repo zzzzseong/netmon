@@ -3,7 +3,7 @@ package utils
 import (
 	"testing"
 
-	"github.com/shirou/gopsutil/v3/net"
+	"github.com/shirou/gopsutil/v4/net"
 )
 
 func TestConnectionTypeToString(t *testing.T) {

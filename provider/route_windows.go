@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	modiphlpapi           = windows.NewLazySystemDLL("iphlpapi.dll")
+	modiphlpapi            = windows.NewLazySystemDLL("iphlpapi.dll")
 	procGetIpForwardTable2 = modiphlpapi.NewProc("GetIpForwardTable2")
-	procFreeMibTable      = modiphlpapi.NewProc("FreeMibTable")
+	procFreeMibTable       = modiphlpapi.NewProc("FreeMibTable")
 )
 
 // WindowsRouteProvider is a RouteProvider implementation using Windows GetIpForwardTable2 API.
@@ -33,21 +33,21 @@ func NewRouteProvider() RouteProvider {
 
 // MIB_IPFORWARD_ROW2 구조체 (간소화 버전)
 type mibIpforwardRow2 struct {
-	InterfaceLuid      uint64
-	InterfaceIndex     uint32
-	DestinationPrefix  ipAddressPrefix
-	NextHop            sockaddrInet
-	SitePrefixLength   byte
-	ValidLifetime      uint32
-	PreferredLifetime  uint32
-	Metric             uint32
-	Protocol           uint32
-	Loopback           byte
+	InterfaceLuid        uint64
+	InterfaceIndex       uint32
+	DestinationPrefix    ipAddressPrefix
+	NextHop              sockaddrInet
+	SitePrefixLength     byte
+	ValidLifetime        uint32
+	PreferredLifetime    uint32
+	Metric               uint32
+	Protocol             uint32
+	Loopback             byte
 	AutoconfigureAddress byte
-	Publish            byte
-	Immortal           byte
-	Age                uint32
-	Origin             uint32
+	Publish              byte
+	Immortal             byte
+	Age                  uint32
+	Origin               uint32
 }
 
 type ipAddressPrefix struct {
@@ -159,4 +159,3 @@ func parseSockaddrInet(sa *sockaddrInet) net.IP {
 	}
 	return nil
 }
-

@@ -102,7 +102,7 @@ func printCustomHelp(cmd *cobra.Command, args []string, cfg Config) {
 	fmt.Println(tipsHeader)
 
 	tips := []struct{ cmd, desc string }{
-		{"  netmon ls -w", "refresh every 2s (default)"},
+		{"  netmon ls -w", "refresh every 1s (default)"},
 		{"  netmon ls -w -n 5", "refresh every 5s"},
 	}
 	var tipsList strings.Builder
@@ -130,7 +130,10 @@ func printCustomHelp(cmd *cobra.Command, args []string, cfg Config) {
 
 // printCustomUsage prints a custom usage message
 func printCustomUsage(cmd *cobra.Command) error {
-	usageText := fmt.Sprintf("Usage: %s [command] [arguments]", cmd.Use)
+	usageText := "Usage: netmon <command> [arguments]"
+	if cmd.HasParent() {
+		usageText = "Usage: netmon " + cmd.Use
+	}
 	usageStyle := lipgloss.NewStyle().
 		Foreground(style.PrimaryColor).
 		Bold(true)

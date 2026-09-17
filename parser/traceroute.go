@@ -23,11 +23,8 @@ func NewTracerouteParser() *TracerouteParser {
 // ParseUnixTraceroute parses Unix traceroute output from the scanner.
 // It reads lines from the scanner and formats each hop in real-time.
 func (p *TracerouteParser) ParseUnixTraceroute(scanner *bufio.Scanner) {
-	// 첫 줄 건너뛰기 (헤더)
-	if scanner.Scan() {
-		// traceroute to ... 줄
-	}
-
+	// 헤더 줄("traceroute to ...")은 hopRegex에 매칭되지 않아 자연히 건너뛴다.
+	// BSD/macOS는 헤더를 stderr로 출력하므로 첫 stdout 줄을 무조건 버리면 1번 홉이 사라진다.
 	hopRegex := regexp.MustCompile(`^\s*(\d+)\s+(.*)$`)
 	ipRegex := regexp.MustCompile(`(\d+\.\d+\.\d+\.\d+|(?:[0-9a-fA-F]{0,4}:){2,}[0-9a-fA-F]{0,4})`)
 	rttRegex := regexp.MustCompile(`(\d+\.\d+)\s*ms`)

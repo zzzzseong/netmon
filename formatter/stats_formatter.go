@@ -8,6 +8,9 @@ import (
 	"netmon/style"
 )
 
+// statsBoxWidth is the preferred outer width of the summary box, including borders.
+const statsBoxWidth = 62
+
 // StatsFormatter formats network statistics in summary format.
 type StatsFormatter struct{}
 
@@ -18,12 +21,12 @@ func NewStatsFormatter() *StatsFormatter {
 
 // NetworkStats contains network statistics information.
 type NetworkStats struct {
-	TCPConnections     int
-	UDPConnections     int
-	ListeningPorts     int
-	NetworkInterfaces  int
-	DefaultGateway     string
-	TopProcesses       []ProcessConnectionCount
+	TCPConnections    int
+	UDPConnections    int
+	ListeningPorts    int
+	NetworkInterfaces int
+	DefaultGateway    string
+	TopProcesses      []ProcessConnectionCount
 }
 
 // ProcessConnectionCount represents a process and its connection count.
@@ -107,7 +110,7 @@ func (f *StatsFormatter) Format(stats NetworkStats) string {
 		BorderForeground(style.PrimaryColor).
 		Padding(1, 2).
 		Margin(1, 0).
-		Width(60)
+		Width(fitWidth(statsBoxWidth) - 2)
 
 	return boxStyle.Render(builder.String())
 }

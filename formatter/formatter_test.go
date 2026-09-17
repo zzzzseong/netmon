@@ -4,15 +4,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shirou/gopsutil/v3/net"
+	"github.com/shirou/gopsutil/v4/net"
 	"netmon/utils"
 )
 
 func TestPortTableFormatter_Format(t *testing.T) {
 	f := NewPortTableFormatter()
 
-	connections := map[string]net.ConnectionStat{
-		"1:8080": {
+	connections := []net.ConnectionStat{
+		{
 			Type:   uint32(utils.TCP),
 			Laddr:  net.Addr{IP: "127.0.0.1", Port: 8080},
 			Status: "LISTEN",

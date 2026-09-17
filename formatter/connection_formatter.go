@@ -5,8 +5,7 @@ import (
 	"sort"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
-	"github.com/shirou/gopsutil/v3/net"
+	"github.com/shirou/gopsutil/v4/net"
 	"netmon/style"
 	"netmon/utils"
 )
@@ -77,22 +76,5 @@ func (f *ConnectionTableFormatter) Format(connections []net.ConnectionStat) stri
 		})
 	}
 
-	// Create table headers
-	headerStyle := style.HeaderStyle
-	headerStyle = headerStyle.Align(lipgloss.Center)
-	styledHeaders := make([]string, len(ConnectionTableColumns))
-	for i, col := range ConnectionTableColumns {
-		styledHeaders[i] = headerStyle.Width(col.Width).Render(col.Title)
-	}
-
-	// Create and style table
-	t := table.New().
-		Border(lipgloss.RoundedBorder()).
-		BorderStyle(style.TableBorderStyle).
-		StyleFunc(GetTableRowStyle).
-		Headers(styledHeaders...).
-		Rows(rows...).
-		Width(style.TableWidthConnection)
-
-	return t.String()
+	return CreateTable(rows, ConnectionTableColumns)
 }

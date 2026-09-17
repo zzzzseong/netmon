@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/shirou/gopsutil/v3/net"
+	"github.com/shirou/gopsutil/v4/net"
 	"netmon/style"
 	"netmon/utils"
 )
@@ -51,26 +51,10 @@ func getStatusStyled(status string) string {
 
 // Format formats connection information as a table.
 // It takes a slice of connections and returns a formatted table string with process information.
-func (f *PortTableFormatter) Format(connections interface{}) string {
-	// 슬라이스 또는 맵을 받을 수 있도록 처리
-	var connSlice []net.ConnectionStat
-	
-	switch v := connections.(type) {
-	case []net.ConnectionStat:
-		connSlice = v
-	case map[string]net.ConnectionStat:
-		// 맵을 슬라이스로 변환
-		connSlice = make([]net.ConnectionStat, 0, len(v))
-		for _, conn := range v {
-			connSlice = append(connSlice, conn)
-		}
-	default:
-		return ""
-	}
-
+func (f *PortTableFormatter) Format(connSlice []net.ConnectionStat) string {
 	// 사이즈가 확정된 슬라이스로 메모리 할당 최적화
 	rows := make([][]string, 0, len(connSlice))
-	
+
 	// per-call dedup cache (avoids double lookup for same PID in one render)
 	seen := make(map[int32]utils.ProcessInfo)
 
@@ -110,8 +94,11 @@ func (f *PortTableFormatter) Format(connections interface{}) string {
 		})
 	}
 
-	return CreateTable(rows, PortTableColumns, style.TableWidthPort)
+	return CreateTable(rows, PortTableColumns)
 }
+
+// infoBoxWidth is the preferred outer width of the process info box, including borders.
+const infoBoxWidth = 100
 
 // ProcessInfoFormatter formats process information for display.
 type ProcessInfoFormatter struct{}
@@ -131,7 +118,7 @@ func (f *ProcessInfoFormatter) Format(header string, pid int, processName string
 func (f *ProcessInfoFormatter) FormatWithCmdline(header string, pid int, processName string, status []string, connections []net.ConnectionStat, cmdline string) string {
 	// strings.Builder로 효율적인 문자열 생성
 	var builder strings.Builder
-	
+
 	// 헤더 추가 (Found by ... 정보)
 	if header != "" {
 		headerStyle := lipgloss.NewStyle().
@@ -140,16 +127,16 @@ func (f *ProcessInfoFormatter) FormatWithCmdline(header string, pid int, process
 		builder.WriteString(headerStyle.Render("🔍 " + header))
 		builder.WriteString("\n\n")
 	}
-	
+
 	// 프로세스 기본 정보
 	builder.WriteString(style.LabelStyle.Render("PID:"))
 	builder.WriteString(style.ValueStyle.Render(fmt.Sprintf("%d", pid)))
 	builder.WriteString("\n")
-	
+
 	builder.WriteString(style.LabelStyle.Render("Name:"))
 	builder.WriteString(style.ValueStyle.Render(processName))
 	builder.WriteString("\n")
-	
+
 	builder.WriteString(style.LabelStyle.Render("Status:"))
 	builder.WriteString(style.ValueStyle.Render(fmt.Sprintf("%v", status)))
 	builder.WriteString("\n")
@@ -165,17 +152,16 @@ func (f *ProcessInfoFormatter) FormatWithCmdline(header string, pid int, process
 		builder.WriteString("\n")
 	}
 
-
 	// 연결 정보 추가 (LISTEN과 ESTABLISHED 분리)
 	if len(connections) > 0 {
 		subtleStyle := lipgloss.NewStyle().Foreground(style.SubtleColor)
 		portStyle := lipgloss.NewStyle().Foreground(style.InfoColor).MarginLeft(2)
 		connStyle := lipgloss.NewStyle().Foreground(style.WarningColor).MarginLeft(2)
-		
+
 		// LISTEN 포트와 ESTABLISHED 연결 분리
 		listeningPorts := make([]net.ConnectionStat, 0)
 		establishedConns := make([]net.ConnectionStat, 0)
-		
+
 		for _, conn := range connections {
 			if conn.Status == "LISTEN" || (conn.Status == "" && utils.IsUDP(conn.Type)) {
 				listeningPorts = append(listeningPorts, conn)
@@ -183,13 +169,13 @@ func (f *ProcessInfoFormatter) FormatWithCmdline(header string, pid int, process
 				establishedConns = append(establishedConns, conn)
 			}
 		}
-		
+
 		// Listening Ports 표시
 		if len(listeningPorts) > 0 {
 			builder.WriteString("\n")
 			builder.WriteString(subtleStyle.Render("Listening Ports:"))
 			builder.WriteString("\n")
-			
+
 			for _, conn := range listeningPorts {
 				portInfo := fmt.Sprintf("  • %s:%d (%s)",
 					conn.Laddr.IP,
@@ -199,13 +185,13 @@ func (f *ProcessInfoFormatter) FormatWithCmdline(header string, pid int, process
 				builder.WriteString("\n")
 			}
 		}
-		
+
 		// Active Connections 표시
 		if len(establishedConns) > 0 {
 			builder.WriteString("\n")
 			builder.WriteString(subtleStyle.Render("Active Connections:"))
 			builder.WriteString("\n")
-			
+
 			for _, conn := range establishedConns {
 				connInfo := fmt.Sprintf("  • %s:%d → %s:%d",
 					conn.Laddr.IP,
@@ -218,9 +204,6 @@ func (f *ProcessInfoFormatter) FormatWithCmdline(header string, pid int, process
 		}
 	}
 
-	infoBox := style.InfoBoxStyle.Render(builder.String())
-	return infoBox
+	// Box width follows the terminal so long command lines are not wrapped into a narrow column.
+	return style.InfoBoxStyle.Width(fitWidth(infoBoxWidth) - 2).Render(builder.String())
 }
-
-
-

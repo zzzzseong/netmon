@@ -30,7 +30,7 @@ func TestGetInterfaceIP(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ip, err := GetInterfaceIP(tt.ifname)
-			
+
 			if tt.wantError {
 				if err == nil {
 					t.Errorf("GetInterfaceIP(%q) expected error, got nil", tt.ifname)
@@ -58,7 +58,7 @@ func TestGetInterfaceIP(t *testing.T) {
 func TestGetInterfaceIP_Loopback(t *testing.T) {
 	// Try common loopback interface names
 	loopbackNames := []string{"lo", "lo0"}
-	
+
 	var foundLoopback bool
 	for _, name := range loopbackNames {
 		ip, err := GetInterfaceIP(name)
@@ -70,7 +70,7 @@ func TestGetInterfaceIP_Loopback(t *testing.T) {
 			break
 		}
 	}
-	
+
 	if !foundLoopback {
 		t.Skip("No loopback interface found on this system")
 	}
@@ -80,7 +80,7 @@ func TestGetInterfaceIP_Loopback(t *testing.T) {
 func BenchmarkGetInterfaceIP(b *testing.B) {
 	// Use loopback as it should exist on all systems
 	ifname := "lo0"
-	
+
 	// Check if interface exists, otherwise try "lo"
 	_, err := GetInterfaceIP(ifname)
 	if err != nil {
@@ -90,7 +90,7 @@ func BenchmarkGetInterfaceIP(b *testing.B) {
 			b.Skip("No loopback interface found")
 		}
 	}
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		GetInterfaceIP(ifname)

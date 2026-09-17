@@ -16,4 +16,3 @@ type RouteProvider interface {
 	// Returns a slice of RouteEntry and an error if the operation fails.
 	GetRoutes() ([]RouteEntry, error)
 }
-

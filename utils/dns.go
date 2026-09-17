@@ -27,7 +27,7 @@ type DNSResult struct {
 }
 
 // LookupDomain performs a DNS lookup for the given domain.
-// Returns A and AAAA records along with response time.
+// Returns A, AAAA, CNAME, MX, NS and TXT records along with response time.
 func LookupDomain(domain string) DNSResult {
 	result := DNSResult{
 		Query:       domain,
@@ -80,6 +80,11 @@ func LookupDomain(domain string) DNSResult {
 	mxRecords, err := resolver.LookupMX(ctx, domain)
 	if err == nil {
 		for _, mx := range mxRecords {
+			if mx.Host == "." {
+				// Null MX (RFC 7505): the domain explicitly accepts no mail.
+				result.MXRecords = append(result.MXRecords, "none (null MX)")
+				continue
+			}
 			result.MXRecords = append(result.MXRecords, fmt.Sprintf("%s (priority: %d)", mx.Host, mx.Pref))
 		}
 	}

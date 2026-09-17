@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
 	"os/signal"
 	"runtime"
 	"strconv"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
@@ -27,12 +29,12 @@ const (
 )
 
 // newTracerouteCmd creates and returns the traceroute command.
-// It traces the network path to a destination with animated loading.
+// It traces the network path to a destination, streaming each hop as it is discovered.
 func newTracerouteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "traceroute <host>",
 		Short: "Trace route to network host",
-		Long:  `Trace the network path to a destination with animated loading.`,
+		Long:  `Trace the network path to a destination, streaming each hop in real time.`,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			target := args[0]
@@ -102,6 +104,10 @@ func executeTracerouteStreaming(target string, parser *parser.TracerouteParser) 
 	// Ensure pipe is closed for resource management
 	defer stdout.Close()
 
+	// Capture stderr so the real reason (e.g. unknown host) can be shown on failure.
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
 	// Start command
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start traceroute: %w", err)
@@ -140,7 +146,10 @@ func executeTracerouteStreaming(target string, parser *parser.TracerouteParser) 
 		// Process completed
 		if err != nil {
 			// Partial results may already be shown, but propagate failure for reliable exit codes.
-			return fmt.Errorf("traceroute command exited with error: %w", err)
+			if msg := strings.TrimSpace(stderr.String()); msg != "" {
+				return fmt.Errorf("%s failed: %s", cmdName, msg)
+			}
+			return fmt.Errorf("%s command exited with error: %w", cmdName, err)
 		}
 		return nil
 	}

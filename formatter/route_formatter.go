@@ -4,8 +4,6 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
 	"netmon/provider"
 	"netmon/style"
 )
@@ -90,21 +88,5 @@ func (f *RouteTableFormatter) Format(routes []provider.RouteEntry) string {
 		})
 	}
 
-	// 헤더 생성
-	headerStyle := style.HeaderStyle
-	styledHeaders := make([]string, len(RouteTableColumns))
-	for i, col := range RouteTableColumns {
-		styledHeaders[i] = headerStyle.Render(col.Title)
-	}
-
-	// 테이블 생성 및 스타일링
-	t := table.New().
-		Border(lipgloss.RoundedBorder()).
-		BorderStyle(style.TableBorderStyle).
-		StyleFunc(GetTableRowStyle).
-		Headers(styledHeaders...).
-		Rows(rows...).
-		Width(style.TableWidthRoute)
-
-	return t.String()
+	return CreateTable(rows, RouteTableColumns)
 }

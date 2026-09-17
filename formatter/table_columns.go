@@ -44,11 +44,11 @@ var RouteTableColumns = []TableColumn{
 
 // Table column width constants for interface table
 const (
-	InterfaceTableNameWidth      = 14
-	InterfaceTableIPAddressWidth = 42
+	InterfaceTableNameWidth       = 14
+	InterfaceTableIPAddressWidth  = 42
 	InterfaceTableMACAddressWidth = 22
-	InterfaceTableStatusWidth    = 13
-	InterfaceTableMTUWidth       = 13
+	InterfaceTableStatusWidth     = 13
+	InterfaceTableMTUWidth        = 13
 )
 
 // InterfaceTableColumns defines the column configuration for the interface table
@@ -107,5 +107,3 @@ var DNSTableColumns = []TableColumn{
 	{Width: DNSTableRecordTypeWidth, Title: "TYPE"},
 	{Width: DNSTableValueWidth, Title: "VALUE"},
 }
-
-

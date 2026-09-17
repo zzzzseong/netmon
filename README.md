@@ -6,7 +6,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.25%2B-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.6.6-brightgreen.svg)](https://github.com/zzzzseong/netmon/releases)
+[![Version](https://img.shields.io/github/v/release/zzzzseong/netmon?color=brightgreen)](https://github.com/zzzzseong/netmon/releases)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey.svg)](https://github.com/zzzzseong/netmon)
 
 *A beautifully designed network monitoring tool built with Go that provides an intuitive interface for viewing active ports, network interfaces, routing tables, and managing processes on Linux, macOS, and Windows.*
@@ -32,10 +32,10 @@
   - Native OS APIs (Netlink on Linux, BSD routing socket on macOS, Win32 API on Windows)
   - Smart filtering (excludes /32 hosts, link-local, multicast, broadcast)
   - Cross-platform compatible
-- **🗺️ Traceroute** - Trace network path to destination with animated loading
+- **🗺️ Traceroute** - Trace network path to destination in real time
   - Cross-platform support (traceroute/tracert)
-  - Beautiful table format with color-coded RTT values
-  - Real-time animated spinner during execution
+  - Each hop is printed as soon as it is discovered, with color-coded RTT values
+  - Ctrl+C cleanly terminates the underlying traceroute process
 - **📊 Network Statistics** - View network statistics summary at a glance
   - Connection counts (TCP/UDP)
   - Listening ports count
@@ -61,8 +61,9 @@
 ### 🎨 User Experience
 - **Beautiful UI** - Modern terminal interface with color-coded output
 - **Center-aligned Headers** - Clean, organized table layouts
-- **Optimized Columns** - Compact display for better terminal compatibility
+- **Fits Your Terminal** - Tables and info boxes shrink to the terminal width; long values are truncated with `…` so rows never wrap
 - **Automatic Sorting** - Port listings sorted by port number for easy scanning
+- **Watch Mode** - `-w` flag on `ls`, `conn`, `stats`, `ip`, `route` refreshes in place with pagination (`-n` sets the interval, default 1s)
 - **Shell Completion** - Tab completion support for Bash, Zsh, and Fish
 - **Fast & Lightweight** - Built with Go for optimal performance
 
@@ -170,6 +171,9 @@ go build .
 sudo mv netmon /usr/local/bin/
 ```
 
+> Source builds report `Version: dev`. Release binaries get their version and build date from the release tag via
+> `go build -ldflags "-X main.Version=1.7.0 -X main.BuildDate=$(date -u +%Y-%m-%d)" .`
+
 **Windows:**
 
 ```powershell
@@ -214,6 +218,8 @@ netmon ls
 # Include UDP connections with -a flag
 netmon ls -a
 ```
+
+> On Linux, connections owned by other users show PID 0 unless netmon runs as root. netmon prints a one-line hint when this happens; use `sudo netmon ls` to see everything.
 
 **Output:**
 ```
@@ -297,7 +303,7 @@ netmon route
 
 ### 🗺️ Trace Route to Host
 
-Trace the network path to a destination with animated loading indicator:
+Trace the network path to a destination. Each hop is printed as soon as it responds:
 
 ```bash
 netmon traceroute <host>
@@ -310,15 +316,17 @@ netmon traceroute google.com
 
 **Output:**
 ```
-◐ Tracing route to google.com...
-╭──────────┬──────────────────────────────────────────┬──────────────┬──────────────┬──────────────╮
-│  HOP     │                   HOST                   │    RTT 1     │    RTT 2     │    RTT 3     │
-├──────────┼──────────────────────────────────────────┼──────────────┼──────────────┼──────────────┤
-│ 1        │ 192.168.1.1                              │ 2.5 ms       │ 2.3 ms       │ 2.1 ms       │
-│ 2        │ 10.0.0.1                                 │ 15.2 ms      │ 14.8 ms      │ 15.0 ms      │
-│ 3        │ 172.217.160.46                           │ 25.3 ms      │ 24.9 ms      │ 25.1 ms      │
-╰──────────┴──────────────────────────────────────────┴──────────────┴──────────────┴──────────────╯
+Tracing route to google.com
+
+   HOP                         HOST                         RTT 1           RTT 2           RTT 3
+──────────  ──────────────────────────────────────────  ──────────────  ──────────────  ──────────────
+1       192.168.1.1                               2.5 ms        2.3 ms        2.1 ms
+2       10.0.0.1                                  15.2 ms       14.8 ms       15.0 ms
+3       Request timed out                         *             *             *
+4       172.217.160.46                            25.3 ms       24.9 ms       25.1 ms
 ```
+
+RTT values are green under 30 ms, yellow under 100 ms, and red above.
 
 ---
 
@@ -508,18 +516,22 @@ netmon update
 ```
 # Already on the latest version
 Checking for updates...
-Already up to date (v1.6.0)
+Already up to date (v1.7.0)
 
 # Update available
 Checking for updates...
-Updating v1.5.0 → v1.6.0
+Updating v1.6.6 → v1.7.0
 Downloading netmon-linux-amd64.tar.gz...
 Verifying checksum...
 Installing to /usr/local/bin/netmon...
-Updated to v1.6.0
+Updated to v1.7.0
 ```
 
 > **Note:** If the install directory (e.g. `/usr/local/bin`) requires root access, netmon automatically retries with `sudo`.
+>
+> If netmon was installed with Homebrew, `netmon update` stops and asks you to run `brew upgrade netmon` instead, so Homebrew's view of the installed version stays correct.
+>
+> On Windows, `netmon update` downloads the `.zip` release asset and swaps the running `netmon.exe` in place, leaving a `netmon.exe.old` that is cleaned up on the next update.
 
 ---
 
@@ -527,12 +539,12 @@ Updated to v1.6.0
 
 | Command | Description | Usage | Flags |
 |---------|-------------|-------|-------|
-| `ls` | List all active ports with process metrics | `netmon ls` | `-a` (include UDP) |
-| `ip` | Show network interfaces | `netmon ip` | `-a` (show IPv6) |
-| `route` | Display routing table with smart filtering | `netmon route` | - |
-| `stats` | Display network statistics summary | `netmon stats` | - |
+| `ls` | List all active ports with process metrics | `netmon ls` | `-a` (include UDP), `-w` (watch), `-n <sec>` (interval, default 1) |
+| `ip` | Show network interfaces | `netmon ip` | `-a` (show IPv6), `-w`, `-n <sec>` |
+| `route` | Display routing table with smart filtering | `netmon route` | `-w`, `-n <sec>` |
+| `stats` | Display network statistics summary | `netmon stats` | `-w`, `-n <sec>` |
 | `dns` | Perform DNS lookup | `netmon dns <domain|ip>` | - |
-| `conn` | Show active ESTABLISHED connections | `netmon conn` | - |
+| `conn` | Show active ESTABLISHED connections | `netmon conn` | `-w`, `-n <sec>` |
 | `find` | Find process by PID, port, or name (auto-detects) | `netmon find <pid|port|name>` | - |
 | `shutdown` | Shutdown a process | `netmon shutdown <pid>` | - |
 | `traceroute` | Trace route to network host | `netmon traceroute <host>` | - |
@@ -553,70 +565,30 @@ Updated to v1.6.0
 
 ---
 
-## 🆕 What's New in v1.6.6
+## 🆕 What's New in v1.7.0
 
-Released: 2026-05-26
+Released: 2026-09-17
 
-- 📄 **Watch Mode Pagination** - When table height exceeds terminal height, output is automatically split into pages. Navigate with `[` / `]` or left/right arrow keys. Column headers and borders are preserved on every page
+- 🪟 **Windows Self-Upgrade** - `netmon update` now works on Windows: downloads the `.zip` asset, extracts `netmon.exe`, and swaps the running binary in place
+- 🐛 **macOS Traceroute Fix** - Hop 1 was silently dropped on macOS/BSD because the header line goes to stderr there; the first hop is now always shown
+- 🔍 **Find Fix** - Name search no longer matches the netmon process itself, and prints `No process found` instead of empty output when nothing matches
+- 🛡️ **Watch Interval Validation** - `-n 0` or a negative interval returns an error instead of panicking
+- ⏱️ **Update Timeouts** - All network calls made by `netmon update` time out after 2 minutes instead of hanging indefinitely. `update` also never downgrades when the local build is newer than the latest release
+- 📦 **gopsutil v4** - Migrated from the deprecated gopsutil v3. Removes the `go-m1cpu` cgo dependency that crashed source builds on Apple Silicon with recent Go toolchains
+- 📐 **Terminal Width Aware** - Tables and info boxes now fit the terminal width. Long cells are truncated with `…` instead of wrapping, so rows stay on one line and watch-mode pagination stays accurate
+- 🚦 **Cleaner Errors** - Runtime errors print only the message; the usage line appears only for argument mistakes. Traceroute failures now show the real reason (e.g. unknown host). `find` exits with code 1 when nothing matches
+- 📧 **Null MX** - `dns` labels an RFC 7505 null MX record as `none (null MX)` instead of printing a bare `.`
+- 🏷️ **Version From Release Tag** - Release binaries take their version and build date from the Git tag. Fixes `Build Date: dev` shown by every previous release
+- 🛑 **Shutdown Verifies** - `shutdown` now reports an error if the process is still alive after SIGTERM and SIGKILL instead of claiming success
+- 👁️ **Watch Shows Refresh Errors** - If a refresh fails in watch mode, the header shows the error instead of silently displaying stale data
+- 🍺 **Homebrew Aware Update** - `netmon update` refuses to overwrite a Homebrew-managed binary and points to `brew upgrade netmon`
+- 🐧 **Linux Permission Hint** - `ls` and `conn` print a hint when PIDs are hidden because netmon is not running as root
+- 🧹 **Cleanup** - Removed unused formatter/style code and the never-used command-line route parser, unified table rendering across all commands, corrected stale help text and docs
+- 🧪 **Tests** - Added tests for column fitting, watch pagination, checksum verification and archive extraction; CI now enforces gofmt
 
 ### Previous Releases
 
-**v1.6.5:**
-
-- 🔧 **Watch Mode Flicker Fix** - Alternate screen cleared once on entry, in-place overwriting on each refresh
-
-**v1.6.4:**
-
-- 🖥️ **Watch Mode Alternate Screen** - Switched to terminal alternate screen buffer, preventing scroll corruption when table height exceeds terminal height
-- ⚡ **Default Interval 1s** - Watch mode refresh interval default changed from 2s to 1s
-
-**v1.6.3:**
-
-- 🐛 **CPU% Always 0 Fix** - CPU usage now shows accurate values in watch mode
-- 🖥️ **Watch Mode Screen Fix** - Screen cleared once on entry so prior shell history no longer bleeds through
-
-**v1.6.2:**
-
-- 🔧 **Watch Mode Flicker Fix** - Eliminated screen flicker in watch mode by overwriting in place instead of clearing the full screen
-- 💡 **Watch Mode Help** - Watch mode usage guide now shown in `netmon` help output
-
-**v1.6.1:**
-
-- 👁️ **Watch Mode** - `--watch` / `-w` flag added to `ls`, `conn`, `stats`, `ip`, `route` commands. Refresh interval configurable with `-n` (default: 2s)
-
-**v1.6.0:**
-
-- 🔄 **Self-Upgrade Command** - `netmon update` upgrades netmon in place with checksum verification, no need to re-run the install script
-- 🐛 **Install Script Fix** - Checksum verification no longer fails on Linux (tarball filename now matches SHA256SUMS entry)
-
-**v1.5.0:**
-
-- 🪟 **Windows Installation Guide** - Full Windows download and installation documentation added
-- 🔍 **Find Command Fix** - Full command line now correctly displayed (ps -ef style) when finding processes
-- 🌐 **DNS Enhancement** - Underscore-containing domains (SRV, DMARC records like `_dmarc.google.com`) now supported
-- 🛡️ **Route Filtering** - IPv6 routes properly excluded from routing table output on all platforms
-- 🔧 **Cross-Platform Reliability** - Resolved Windows CI failures (`go vet` unsafe.Pointer, binary extension)
-- ⚡ **Signal Handling** - Traceroute cancellation signal handling split by platform (Unix: SIGTERM+Interrupt, Windows: Interrupt only)
-
-**v1.4.0:**
-
-- 📊 **Network Statistics Command** - Quick overview of network activity with connection counts, listening ports, and top processes
-- 🌐 **DNS Lookup Command** - Fast DNS lookups (forward and reverse) with response time measurement
-- 🔍 **Enhanced Find Command** - Now displays active connections for found processes
-- 🎨 **Enhanced Formatting** - Beautiful table layouts for all new commands
-- ⚡ **Performance Improvements** - Optimized connection filtering and DNS lookup performance
-
-**v1.2.2:**
-- 🔍 Enhanced Find Command - Smart search that automatically detects PID or port, shows full command line
-- 📋 Automatic Port Sorting - Port listings are now automatically sorted by port number
-- 🛑 Improved Shutdown UI - Better confirmation prompts and styled success/cancel messages
-- 🏗️ Code Quality Improvements - Following Go best practices with comprehensive documentation
-- 🧪 Enhanced Testing - Added test coverage for multiple packages including benchmarks
-
-**v1.2.1:**
-- 🎨 Custom Help Output Restored
-- 🧹 Completion Command Cleanup
-- 📁 Code Organization improvements
+See [GitHub Releases](https://github.com/zzzzseong/netmon/releases) for the full changelog of earlier versions.
 
 ### Shell Completion
 
@@ -653,15 +625,13 @@ fi
 source ~/.zshrc
 ```
 
-> 📜 For detailed changelog and previous versions, see [GitHub Releases](https://github.com/zzzzseong/netmon/releases)
-
 ---
 
 ## 🛠️ Tech Stack
 
 - **Language**: Go 1.25+
 - **Core Dependencies**:
-  - [`github.com/shirou/gopsutil/v3`](https://github.com/shirou/gopsutil) - System and process utilities
+  - [`github.com/shirou/gopsutil/v4`](https://github.com/shirou/gopsutil) - System and process utilities
   - [`github.com/charmbracelet/lipgloss`](https://github.com/charmbracelet/lipgloss) - Terminal styling
   - [`github.com/manifoldco/promptui`](https://github.com/manifoldco/promptui) - Interactive prompts
 - **Routing System**:

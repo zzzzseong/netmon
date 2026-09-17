@@ -2,11 +2,12 @@ package utils
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
-	"github.com/shirou/gopsutil/v3/net"
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v4/net"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 const (
@@ -132,8 +133,13 @@ func FindByProcessName(name string) ([]*FindResult, error) {
 
 	results := make([]*FindResult, 0)
 	nameLower := strings.ToLower(name)
+	selfPID := int32(os.Getpid())
 
 	for _, pid := range pids {
+		// netmon 자신은 커맨드라인에 검색어가 포함되어 항상 매칭되므로 제외
+		if pid == selfPID {
+			continue
+		}
 		proc, err := process.NewProcess(pid)
 		if err != nil {
 			continue // Skip if process is not accessible

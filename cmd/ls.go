@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/shirou/gopsutil/v3/net"
+	"github.com/shirou/gopsutil/v4/net"
 	"github.com/spf13/cobra"
 	"netmon/formatter"
 	"netmon/utils"
@@ -24,6 +24,7 @@ func newLsCmd() *cobra.Command {
 
 			fmtter := formatter.NewPortTableFormatter()
 
+			var shown []net.ConnectionStat
 			run := func() (string, error) {
 				connections, err := net.Connections("inet")
 				if err != nil {
@@ -33,7 +34,8 @@ func newLsCmd() *cobra.Command {
 				if len(listeningConns) == 0 {
 					return "No listening ports found.", nil
 				}
-				return fmtter.Format(utils.SortConnectionsByPort(listeningConns)), nil
+				shown = utils.SortConnectionsByPort(listeningConns)
+				return fmtter.Format(shown), nil
 			}
 
 			if watch {
@@ -44,6 +46,9 @@ func newLsCmd() *cobra.Command {
 				return err
 			}
 			fmt.Println(out)
+			if hint := hiddenPIDHint(shown); hint != "" {
+				fmt.Println(hint)
+			}
 			return nil
 		},
 	}

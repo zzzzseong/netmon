@@ -14,7 +14,7 @@ func newDNSCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "dns <domain|ip>",
 		Short: "Perform DNS lookup",
-		Long:  `Perform DNS lookup for a domain (A/AAAA records) or reverse lookup for an IP address (PTR records).`,
+		Long:  `Perform DNS lookup for a domain (A, AAAA, CNAME, MX, NS, TXT records) or reverse lookup for an IP address (PTR records).`,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			query := args[0]

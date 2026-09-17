@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/shirou/gopsutil/v3/net"
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v4/net"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 // ConnectionType represents a network connection type.
@@ -75,7 +75,6 @@ func FilterEstablishedConnections(connections []net.ConnectionStat) []net.Connec
 	}
 	return established
 }
-
 
 // ProcessCache holds *process.Process objects across calls so that gopsutil can
 // compute CPU deltas correctly. CPUPercent() always returns 0 on first call to
@@ -153,4 +152,3 @@ func fetchProcessInfo(proc *process.Process) ProcessInfo {
 	}
 	return info
 }
-

@@ -3,11 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/charmbracelet/lipgloss"
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v4/process"
 	"github.com/spf13/cobra"
 	"netmon/formatter"
-	"netmon/style"
 	"netmon/utils"
 )
 
@@ -28,13 +26,8 @@ Provide a string to search by process name (partial match, case-insensitive).`,
 
 			// Auto-search using FindByInput (supports both numbers and names)
 			results, err := utils.FindByInput(input)
-			if err != nil {
-				noResultMsg := lipgloss.NewStyle().
-					Foreground(style.WarningColor).
-					Bold(true).
-					Render(fmt.Sprintf("No process found: %s", input))
-				fmt.Println(noResultMsg)
-				return nil
+			if err != nil || len(results) == 0 {
+				return fmt.Errorf("no process found: %s", input)
 			}
 
 			// Format and display each result

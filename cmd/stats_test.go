@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	gonet "github.com/shirou/gopsutil/v3/net"
+	gonet "github.com/shirou/gopsutil/v4/net"
 )
 
 func TestGetTopProcessesByConnections_FiltersAndTopN(t *testing.T) {

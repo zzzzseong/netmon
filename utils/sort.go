@@ -3,7 +3,7 @@ package utils
 import (
 	"sort"
 
-	"github.com/shirou/gopsutil/v3/net"
+	"github.com/shirou/gopsutil/v4/net"
 )
 
 // SortConnectionsByPort converts a map of connections to a sorted slice by port number.

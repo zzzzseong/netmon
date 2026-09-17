@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"compress/gzip"
 	"crypto/sha256"
 	"encoding/json"
@@ -12,12 +13,17 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
 
 const githubRepo = "zzzzseong/netmon"
+
+// httpClient bounds every network call so a stalled GitHub response cannot hang the command forever.
+var httpClient = &http.Client{Timeout: 2 * time.Minute}
 
 type releaseInfo struct {
 	TagName string `json:"tag_name"`
@@ -41,10 +47,21 @@ func runUpdate(cfg Config) error {
 		return fmt.Errorf("failed to fetch latest version: %w", err)
 	}
 
-	current := "v" + cfg.Version
-	if latest == current {
-		fmt.Printf("Already up to date (%s)\n", current)
-		return nil
+	current := "dev build"
+	if cfg.Version != "dev" {
+		current = "v" + cfg.Version
+		if !isNewerVersion(latest, current) {
+			fmt.Printf("Already up to date (%s)\n", current)
+			return nil
+		}
+	}
+
+	selfPath, err := resolveExecutable()
+	if err != nil {
+		return err
+	}
+	if isHomebrewPath(selfPath) {
+		return fmt.Errorf("netmon was installed with Homebrew; run `brew upgrade netmon` instead so Homebrew stays in sync")
 	}
 
 	fmt.Printf("Updating %s → %s\n", current, latest)
@@ -60,28 +77,23 @@ func runUpdate(cfg Config) error {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	tarball := fmt.Sprintf("netmon-%s.tar.gz", platform)
-	tarballPath := filepath.Join(tmpDir, tarball)
-	downloadURL := fmt.Sprintf("https://github.com/%s/releases/download/%s/%s", githubRepo, latest, tarball)
+	archive := archiveName(platform)
+	archivePath := filepath.Join(tmpDir, archive)
+	downloadURL := fmt.Sprintf("https://github.com/%s/releases/download/%s/%s", githubRepo, latest, archive)
 
-	fmt.Printf("Downloading %s...\n", tarball)
-	if err := downloadFile(tarballPath, downloadURL); err != nil {
+	fmt.Printf("Downloading %s...\n", archive)
+	if err := downloadFile(archivePath, downloadURL); err != nil {
 		return fmt.Errorf("download failed: %w", err)
 	}
 
 	fmt.Println("Verifying checksum...")
 	checksumURL := fmt.Sprintf("https://github.com/%s/releases/download/%s/SHA256SUMS", githubRepo, latest)
-	if err := verifyChecksum(tarballPath, tarball, checksumURL); err != nil {
+	if err := verifyChecksum(archivePath, archive, checksumURL); err != nil {
 		return err
 	}
 
-	if err := extractBinary(tarballPath, tmpDir); err != nil {
+	if err := extractBinary(archivePath, tmpDir); err != nil {
 		return fmt.Errorf("extraction failed: %w", err)
-	}
-
-	selfPath, err := resolveExecutable()
-	if err != nil {
-		return err
 	}
 
 	newBinary := filepath.Join(tmpDir, execName())
@@ -95,7 +107,7 @@ func runUpdate(cfg Config) error {
 }
 
 func fetchLatestTag() (string, error) {
-	resp, err := http.Get(fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", githubRepo))
+	resp, err := httpClient.Get(fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", githubRepo))
 	if err != nil {
 		return "", err
 	}
@@ -134,8 +146,17 @@ func execName() string {
 	return "netmon"
 }
 
+// archiveName returns the release asset name for the platform.
+// The release workflow publishes .zip for Windows and .tar.gz for everything else.
+func archiveName(platform string) string {
+	if runtime.GOOS == "windows" {
+		return fmt.Sprintf("netmon-%s.zip", platform)
+	}
+	return fmt.Sprintf("netmon-%s.tar.gz", platform)
+}
+
 func downloadFile(dest, url string) error {
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		return err
 	}
@@ -156,7 +177,7 @@ func downloadFile(dest, url string) error {
 }
 
 func verifyChecksum(filePath, filename, checksumURL string) error {
-	resp, err := http.Get(checksumURL)
+	resp, err := httpClient.Get(checksumURL)
 	if err != nil {
 		return fmt.Errorf("failed to download SHA256SUMS: %w", err)
 	}
@@ -197,7 +218,43 @@ func verifyChecksum(filePath, filename, checksumURL string) error {
 	return nil
 }
 
-func extractBinary(tarballPath, destDir string) error {
+func extractBinary(archivePath, destDir string) error {
+	if strings.HasSuffix(archivePath, ".zip") {
+		return extractZip(archivePath, destDir)
+	}
+	return extractTarGz(archivePath, destDir)
+}
+
+func extractZip(zipPath, destDir string) error {
+	zr, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return err
+	}
+	defer zr.Close()
+
+	target := execName()
+	for _, zf := range zr.File {
+		if zf.FileInfo().IsDir() || filepath.Base(zf.Name) != target {
+			continue
+		}
+		in, err := zf.Open()
+		if err != nil {
+			return err
+		}
+		out, err := os.OpenFile(filepath.Join(destDir, target), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+		if err != nil {
+			in.Close()
+			return err
+		}
+		_, copyErr := io.Copy(out, in)
+		in.Close()
+		out.Close()
+		return copyErr
+	}
+	return fmt.Errorf("binary %s not found in archive", target)
+}
+
+func extractTarGz(tarballPath, destDir string) error {
 	f, err := os.Open(tarballPath)
 	if err != nil {
 		return err
@@ -234,6 +291,46 @@ func extractBinary(tarballPath, destDir string) error {
 	return fmt.Errorf("binary %s not found in archive", target)
 }
 
+// isNewerVersion reports whether candidate is a strictly newer semantic version
+// than current. Both are "vMAJOR.MINOR.PATCH" tags. Unparseable input is treated
+// as newer so an unexpected tag format never blocks an update.
+func isNewerVersion(candidate, current string) bool {
+	parse := func(v string) ([3]int, bool) {
+		var out [3]int
+		parts := strings.Split(strings.TrimPrefix(v, "v"), ".")
+		if len(parts) != 3 {
+			return out, false
+		}
+		for i, p := range parts {
+			n, err := strconv.Atoi(p)
+			if err != nil {
+				return out, false
+			}
+			out[i] = n
+		}
+		return out, true
+	}
+	c, okC := parse(candidate)
+	cur, okCur := parse(current)
+	if !okC || !okCur {
+		return candidate != current
+	}
+	for i := 0; i < 3; i++ {
+		if c[i] != cur[i] {
+			return c[i] > cur[i]
+		}
+	}
+	return false
+}
+
+// isHomebrewPath reports whether the binary lives inside a Homebrew (or Linuxbrew) prefix.
+func isHomebrewPath(path string) bool {
+	p := filepath.ToSlash(path)
+	return strings.Contains(p, "/Cellar/") ||
+		strings.Contains(p, "/homebrew/") ||
+		strings.Contains(p, "/linuxbrew/")
+}
+
 func resolveExecutable() (string, error) {
 	self, err := os.Executable()
 	if err != nil {
@@ -247,10 +344,19 @@ func installBinary(src, dest string) error {
 	tmp := dest + ".new"
 	err := copyExecutable(src, tmp)
 	if err == nil {
+		if runtime.GOOS == "windows" {
+			// A running .exe cannot be overwritten on Windows, but it can be renamed.
+			// Move the current binary aside first; the leftover .old file is removed on the next update.
+			old := dest + ".old"
+			_ = os.Remove(old)
+			if err := os.Rename(dest, old); err != nil {
+				return err
+			}
+		}
 		return os.Rename(tmp, dest)
 	}
-	// Permission denied — retry with sudo.
-	if os.IsPermission(err) {
+	// Permission denied — retry with sudo (not available on Windows).
+	if os.IsPermission(err) && runtime.GOOS != "windows" {
 		fmt.Println("Elevated privileges required, retrying with sudo...")
 		return sudoInstall(src, dest)
 	}

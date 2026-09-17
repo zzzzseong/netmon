@@ -55,13 +55,13 @@ func (p *BSDRouteProvider) GetRoutes() ([]RouteEntry, error) {
 			switch addr := routeMsg.Addrs[0].(type) {
 			case *route.Inet4Addr:
 				ip := net.IPv4(addr.IP[0], addr.IP[1], addr.IP[2], addr.IP[3])
-				
+
 				// 넷마스크와 함께 CIDR 형식으로 변환
 				if routeMsg.Addrs[2] != nil { // RTA_NETMASK
 					if mask, ok := routeMsg.Addrs[2].(*route.Inet4Addr); ok {
 						maskIP := net.IPv4(mask.IP[0], mask.IP[1], mask.IP[2], mask.IP[3])
 						prefixLen, _ := net.IPMask(maskIP.To4()).Size()
-						
+
 						if ip.Equal(net.IPv4zero) && prefixLen == 0 {
 							entry.Destination = "default"
 						} else {
@@ -132,4 +132,3 @@ func (p *BSDRouteProvider) GetRoutes() ([]RouteEntry, error) {
 
 	return entries, nil
 }
-

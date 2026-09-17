@@ -2,9 +2,22 @@
 
 package provider
 
+import (
+	"fmt"
+	"runtime"
+)
+
+// unsupportedRouteProvider is used on operating systems without a native implementation.
+type unsupportedRouteProvider struct{}
+
 // NewRouteProvider returns a RouteProvider implementation for the current OS.
-// For unsupported operating systems, it returns a FallbackRouteProvider.
+// Release binaries are built only for Linux, macOS and Windows, which all have
+// native providers; anything else reports the routing table as unavailable.
 func NewRouteProvider() RouteProvider {
-	return NewFallbackRouteProvider()
+	return unsupportedRouteProvider{}
 }
 
+// GetRoutes always fails on unsupported operating systems.
+func (unsupportedRouteProvider) GetRoutes() ([]RouteEntry, error) {
+	return nil, fmt.Errorf("routing table is not supported on %s", runtime.GOOS)
+}

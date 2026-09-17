@@ -76,4 +76,3 @@ func (p *LinuxRouteProvider) GetRoutes() ([]RouteEntry, error) {
 
 	return entries, nil
 }
-
