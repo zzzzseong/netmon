@@ -172,7 +172,7 @@ sudo mv netmon /usr/local/bin/
 ```
 
 > Source builds report `Version: dev`. Release binaries get their version and build date from the release tag via
-> `go build -ldflags "-X main.Version=1.7.1 -X main.BuildDate=$(date -u +%Y-%m-%d)" .`
+> `go build -ldflags "-X main.Version=1.7.2 -X main.BuildDate=$(date -u +%Y-%m-%d)" .`
 
 **Windows:**
 
@@ -516,15 +516,15 @@ netmon update
 ```
 # Already on the latest version
 Checking for updates...
-Already up to date (v1.7.1)
+Already up to date (v1.7.2)
 
 # Update available
 Checking for updates...
-Updating v1.7.0 → v1.7.1
+Updating v1.7.1 → v1.7.2
 Downloading netmon-linux-amd64.tar.gz...
 Verifying checksum...
 Installing to /usr/local/bin/netmon...
-Updated to v1.7.1
+Updated to v1.7.2
 ```
 
 > **Note:** If the install directory (e.g. `/usr/local/bin`) requires root access, netmon automatically retries with `sudo`.
@@ -565,7 +565,13 @@ Updated to v1.7.1
 
 ---
 
-## 🆕 What's New in v1.7.1
+## 🆕 What's New in v1.7.2
+
+Released: 2026-09-18
+
+- 🐛 **Watch Mode Rendering** - `-w` output was garbled on a real terminal: lines stair-stepped because raw mode disables newline translation, every frame scrolled the screen by two lines because the pagination footer was under-counted, table headers vanished from page 2 onward because colored borders were not recognized as a table, and shorter pages left residue from the previous frame. All four are fixed; watch frames now redraw cleanly at any terminal size
+
+## What's New in v1.7.1
 
 Released: 2026-09-18
 

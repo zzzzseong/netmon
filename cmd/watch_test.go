@@ -59,4 +59,11 @@ func TestIsTableOutput(t *testing.T) {
 	if isTableOutput([]string{"Network Summary", "TCP: 3"}) {
 		t.Error("plain text must not be detected as a table")
 	}
+	colored := fakeTable(1)
+	for i := range colored {
+		colored[i] = "\x1b[38;5;63m" + colored[i] + "\x1b[0m" // lipgloss border color on a TTY
+	}
+	if !isTableOutput(colored) {
+		t.Error("table output with ANSI-colored borders must be detected")
+	}
 }

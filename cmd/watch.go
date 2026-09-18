@@ -14,7 +14,7 @@ import (
 
 const (
 	watchHeaderLines = 2 // command info line + blank line
-	watchFooterLines = 1 // pagination indicator
+	watchFooterLines = 2 // blank line + pagination indicator
 	tableChrome      = 4 // top border + column headers + separator + bottom border
 )
 
@@ -135,16 +135,22 @@ func renderWatch(name string, interval time.Duration, content string, refreshErr
 	// Keep the header on one line so the pagination math below stays valid.
 	header = ansi.Truncate(header, termWidth, "…")
 
-	fmt.Print("\033[H")
-	fmt.Printf("%s\n\n", header)
+	// The terminal is in raw mode, which disables output post-processing, so a
+	// bare "\n" no longer returns the cursor to column 0. Build the frame and
+	// emit "\r\n" explicitly, erasing the rest of each line first so a shorter
+	// frame leaves no residue from the previous one.
+	var frame strings.Builder
+	frame.WriteString("\033[H")
+	fmt.Fprintf(&frame, "%s\n\n", header)
 
 	lines := trimLines(content)
 	available := termHeight - watchHeaderLines
 
 	if len(lines) <= available {
 		// Content fits — no pagination needed
-		fmt.Print(strings.Join(lines, "\n"))
-		fmt.Print("\033[J")
+		frame.WriteString(strings.Join(lines, "\n"))
+		frame.WriteString("\033[J")
+		fmt.Print(strings.ReplaceAll(frame.String(), "\n", "\033[K\r\n"))
 		return 0
 	}
 
@@ -159,9 +165,12 @@ func renderWatch(name string, interval time.Duration, content string, refreshErr
 		page = 0
 	}
 
-	fmt.Print(strings.Join(pages[page], "\n"))
-	fmt.Printf("\n\n  Page %d/%d    [ prev   ] next\n", page+1, totalPages)
-	fmt.Print("\033[J")
+	frame.WriteString(strings.Join(pages[page], "\n"))
+	// No trailing newline: the footer sits on the last row and a newline
+	// there would scroll the screen, shifting every following frame.
+	fmt.Fprintf(&frame, "\n\n  Page %d/%d    [ prev   ] next", page+1, totalPages)
+	frame.WriteString("\033[J")
+	fmt.Print(strings.ReplaceAll(frame.String(), "\n", "\033[K\r\n"))
 
 	return page
 }
@@ -204,9 +213,10 @@ func isTableOutput(lines []string) bool {
 	if len(lines) < 4 {
 		return false
 	}
-	return strings.HasPrefix(lines[0], "╭") &&
-		strings.HasPrefix(lines[2], "├") &&
-		strings.HasPrefix(lines[len(lines)-1], "╰")
+	// Borders carry ANSI color codes on a real terminal; strip them before matching.
+	return strings.HasPrefix(ansi.Strip(lines[0]), "╭") &&
+		strings.HasPrefix(ansi.Strip(lines[2]), "├") &&
+		strings.HasPrefix(ansi.Strip(lines[len(lines)-1]), "╰")
 }
 
 func trimLines(s string) []string {
