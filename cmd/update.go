@@ -61,7 +61,7 @@ func runUpdate(cfg Config) error {
 		return err
 	}
 	if isHomebrewPath(selfPath) {
-		return fmt.Errorf("netmon was installed with Homebrew; run `brew upgrade netmon` instead so Homebrew stays in sync")
+		return upgradeWithHomebrew(current, latest)
 	}
 
 	fmt.Printf("Updating %s → %s\n", current, latest)
@@ -112,6 +112,23 @@ func fetchLatestTag() (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
+	return parseLatestTag(resp)
+}
+
+// parseLatestTag extracts tag_name from a releases/latest response, surfacing
+// the API's own message on a non-200 status (e.g. rate limiting) instead of a
+// misleading "empty tag_name" error.
+func parseLatestTag(resp *http.Response) (string, error) {
+	if resp.StatusCode != http.StatusOK {
+		var apiErr struct {
+			Message string `json:"message"`
+		}
+		_ = json.NewDecoder(resp.Body).Decode(&apiErr)
+		if apiErr.Message != "" {
+			return "", fmt.Errorf("GitHub API returned %s: %s", resp.Status, apiErr.Message)
+		}
+		return "", fmt.Errorf("GitHub API returned %s", resp.Status)
+	}
 
 	var rel releaseInfo
 	if err := json.NewDecoder(resp.Body).Decode(&rel); err != nil {
@@ -321,6 +338,30 @@ func isNewerVersion(candidate, current string) bool {
 		}
 	}
 	return false
+}
+
+// homebrewFormula is the fully qualified tap formula, so brew never resolves a
+// different "netmon" from another tap.
+const homebrewFormula = "zzzzseong/netmon/netmon"
+
+// upgradeWithHomebrew delegates the upgrade to brew so the Cellar and brew's
+// own records stay in sync. brew update runs first because brew upgrade only
+// auto-updates taps once a day and would otherwise miss a fresh release.
+func upgradeWithHomebrew(current, latest string) error {
+	brew, err := exec.LookPath("brew")
+	if err != nil {
+		return fmt.Errorf("netmon was installed with Homebrew but `brew` is not in PATH; run `brew upgrade netmon` manually")
+	}
+
+	fmt.Printf("Installed with Homebrew; updating %s → %s via brew\n", current, latest)
+	for _, args := range [][]string{{"update", "--quiet"}, {"upgrade", homebrewFormula}} {
+		c := exec.Command(brew, args...)
+		c.Stdout, c.Stderr = os.Stdout, os.Stderr
+		if err := c.Run(); err != nil {
+			return fmt.Errorf("brew %s failed: %w", strings.Join(args, " "), err)
+		}
+	}
+	return nil
 }
 
 // isHomebrewPath reports whether the binary lives inside a Homebrew (or Linuxbrew) prefix.

@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"crypto/sha256"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -172,5 +173,30 @@ func TestExtractBinary_MissingBinary(t *testing.T) {
 
 	if err := extractBinary(archive, dir); err == nil {
 		t.Fatal("expected error when archive has no binary")
+	}
+}
+
+func TestParseLatestTag(t *testing.T) {
+	mk := func(status int, body string) *http.Response {
+		return &http.Response{
+			StatusCode: status,
+			Status:     fmt.Sprintf("%d %s", status, http.StatusText(status)),
+			Body:       io.NopCloser(strings.NewReader(body)),
+		}
+	}
+
+	tag, err := parseLatestTag(mk(200, `{"tag_name":"v1.7.3"}`))
+	if err != nil || tag != "v1.7.3" {
+		t.Fatalf("200: got %q, %v", tag, err)
+	}
+
+	_, err = parseLatestTag(mk(403, `{"message":"API rate limit exceeded for 1.2.3.4."}`))
+	if err == nil || !strings.Contains(err.Error(), "403") || !strings.Contains(err.Error(), "rate limit") {
+		t.Fatalf("403: expected status and API message in error, got %v", err)
+	}
+
+	_, err = parseLatestTag(mk(502, ``))
+	if err == nil || !strings.Contains(err.Error(), "502") {
+		t.Fatalf("502 without body: expected status in error, got %v", err)
 	}
 }

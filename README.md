@@ -172,7 +172,7 @@ sudo mv netmon /usr/local/bin/
 ```
 
 > Source builds report `Version: dev`. Release binaries get their version and build date from the release tag via
-> `go build -ldflags "-X main.Version=1.7.2 -X main.BuildDate=$(date -u +%Y-%m-%d)" .`
+> `go build -ldflags "-X main.Version=1.7.3 -X main.BuildDate=$(date -u +%Y-%m-%d)" .`
 
 **Windows:**
 
@@ -516,20 +516,20 @@ netmon update
 ```
 # Already on the latest version
 Checking for updates...
-Already up to date (v1.7.2)
+Already up to date (v1.7.3)
 
 # Update available
 Checking for updates...
-Updating v1.7.1 → v1.7.2
+Updating v1.7.2 → v1.7.3
 Downloading netmon-linux-amd64.tar.gz...
 Verifying checksum...
 Installing to /usr/local/bin/netmon...
-Updated to v1.7.2
+Updated to v1.7.3
 ```
 
 > **Note:** If the install directory (e.g. `/usr/local/bin`) requires root access, netmon automatically retries with `sudo`.
 >
-> If netmon was installed with Homebrew, `netmon update` stops and asks you to run `brew upgrade netmon` instead, so Homebrew's view of the installed version stays correct.
+> If netmon was installed with Homebrew, `netmon update` runs `brew update` and `brew upgrade` for you instead of replacing the binary itself, so Homebrew's view of the installed version stays correct.
 >
 > On Windows, `netmon update` downloads the `.zip` release asset and swaps the running `netmon.exe` in place, leaving a `netmon.exe.old` that is cleaned up on the next update.
 
@@ -565,7 +565,14 @@ Updated to v1.7.2
 
 ---
 
-## 🆕 What's New in v1.7.2
+## 🆕 What's New in v1.7.3
+
+Released: 2026-09-18
+
+- 🍺 **Update Delegates to Homebrew** - On a Homebrew install, `netmon update` now runs `brew update` and `brew upgrade` for you instead of stopping with an error, so one command upgrades netmon whichever way it was installed
+- 🚦 **Clearer Update Errors** - When the GitHub API rejects the version check (e.g. rate limiting), `netmon update` shows the HTTP status and the API's message instead of `empty tag_name in GitHub API response`
+
+## What's New in v1.7.2
 
 Released: 2026-09-18
 
