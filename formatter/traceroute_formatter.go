@@ -55,7 +55,7 @@ func (f *TracerouteFormatter) PrintTableHeader() {
 // PrintHopLine prints a single hop line with formatted information.
 func (f *TracerouteFormatter) PrintHopLine(hop TraceHop) {
 	// Hop 번호
-	hopStr := fmt.Sprintf("%-6d", hop.Hop)
+	hopStr := fmt.Sprintf("%-*d", TracerouteTableHopWidth, hop.Hop)
 	hopStr = style.HopStyle.Render(hopStr)
 
 	// Host/IP
@@ -65,9 +65,9 @@ func (f *TracerouteFormatter) PrintHopLine(hop TraceHop) {
 	}
 	if hop.Status == "timeout" {
 		hostStr = "Request timed out"
-		hostStr = style.HostTimeoutStyle.Render(fmt.Sprintf("%-40s", hostStr))
+		hostStr = style.HostTimeoutStyle.Render(fmt.Sprintf("%-*s", TracerouteTableHostWidth, hostStr))
 	} else {
-		hostStr = style.HostStyle.Render(fmt.Sprintf("%-40s", hostStr))
+		hostStr = style.HostStyle.Render(fmt.Sprintf("%-*s", TracerouteTableHostWidth, hostStr))
 	}
 
 	// RTT 값들
@@ -82,14 +82,14 @@ func (f *TracerouteFormatter) PrintHopLine(hop TraceHop) {
 // Values less than 30ms are green, 30-100ms are yellow, and above 100ms are red.
 func (f *TracerouteFormatter) formatRTT(rtt string) string {
 	if rtt == "*" {
-		return style.RTTStyle.Render(fmt.Sprintf("%-12s", "*"))
+		return style.RTTStyle.Render(fmt.Sprintf("%-*s", TracerouteTableRTT1Width, "*"))
 	}
 
 	// RTT 값에서 숫자만 추출
 	rttValue := strings.TrimSuffix(rtt, " ms")
 	val, err := strconv.ParseFloat(rttValue, 64)
 	if err != nil {
-		return style.RTTStyle.Render(fmt.Sprintf("%-12s", rtt))
+		return style.RTTStyle.Render(fmt.Sprintf("%-*s", TracerouteTableRTT1Width, rtt))
 	}
 
 	// RTT 값에 따라 색상 변경
@@ -102,5 +102,5 @@ func (f *TracerouteFormatter) formatRTT(rtt string) string {
 		color = style.DangerColor
 	}
 
-	return lipgloss.NewStyle().Foreground(color).Render(fmt.Sprintf("%-12s", rtt))
+	return lipgloss.NewStyle().Foreground(color).Render(fmt.Sprintf("%-*s", TracerouteTableRTT1Width, rtt))
 }

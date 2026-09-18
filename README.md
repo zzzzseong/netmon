@@ -172,7 +172,7 @@ sudo mv netmon /usr/local/bin/
 ```
 
 > Source builds report `Version: dev`. Release binaries get their version and build date from the release tag via
-> `go build -ldflags "-X main.Version=1.7.0 -X main.BuildDate=$(date -u +%Y-%m-%d)" .`
+> `go build -ldflags "-X main.Version=1.7.1 -X main.BuildDate=$(date -u +%Y-%m-%d)" .`
 
 **Windows:**
 
@@ -516,15 +516,15 @@ netmon update
 ```
 # Already on the latest version
 Checking for updates...
-Already up to date (v1.7.0)
+Already up to date (v1.7.1)
 
 # Update available
 Checking for updates...
-Updating v1.6.6 → v1.7.0
+Updating v1.7.0 → v1.7.1
 Downloading netmon-linux-amd64.tar.gz...
 Verifying checksum...
 Installing to /usr/local/bin/netmon...
-Updated to v1.7.0
+Updated to v1.7.1
 ```
 
 > **Note:** If the install directory (e.g. `/usr/local/bin`) requires root access, netmon automatically retries with `sudo`.
@@ -565,7 +565,13 @@ Updated to v1.7.0
 
 ---
 
-## 🆕 What's New in v1.7.0
+## 🆕 What's New in v1.7.1
+
+Released: 2026-09-18
+
+- 🐛 **Traceroute Table Alignment** - Hop rows used narrower hardcoded widths than the table header, so the HOST and RTT columns drifted out from under their titles. Rows now share the header's column widths
+
+## What's New in v1.7.0
 
 Released: 2026-09-17
 
